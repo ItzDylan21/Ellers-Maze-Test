@@ -437,8 +437,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d6162b81564ecc548b9aadce38a7a4ef, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  width: 7
-  height: 7
+  width: 10
+  height: 10
   cellSize: 10
   gridSpawnPos: {fileID: 1191605792}
   grid: {fileID: 0}
