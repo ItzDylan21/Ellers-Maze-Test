@@ -36,9 +36,9 @@ public class PrimMazeGenerator : MonoBehaviour
         InitializeWalls();
         GenerateRandomizedPrim();
         ConfigureEntryAndExit();
-        //RemoveRandomWalls(3 * gridSpawner.width);
-        BuildMazeInUnity();
+        RemoveRandomWalls(3 * gridSpawner.width);
         VertexText(gridXZ.GetAllVertices(gridSpawner.startNode), Color.blue, 1);
+        BuildMazeInUnity();
     }
 
     private void InitializeWalls()
@@ -75,33 +75,65 @@ public class PrimMazeGenerator : MonoBehaviour
 
     private void GenerateRandomizedPrim()
     {
-        int[] incompleteCells = new int[gridXZ.GetNumberOfCells()];
-        incompleteCells[0] = randomizer.Next(gridXZ.GetNumberOfCells());
-        int numIncompleteCells = 1;
+        HashSet<int> visitedCells = new HashSet<int>();
+        Stack<int> frontier = new Stack<int>();
+        int startX = randomizer.Next(0, gridSpawner.width);
+        int startY = randomizer.Next(0, gridSpawner.height);
 
-        while (numIncompleteCells > 0)
+        visitedCells.Add(startX + startY * gridSpawner.width);
+        frontier.Push(startX + startY * gridSpawner.width);
+
+        while (frontier.Count > 0)
         {
-            Debug.Log(numIncompleteCells);
-            // Pick a random incomplete cell
-            int incompleteCellIndex = randomizer.Next(numIncompleteCells);
-            int incompleteCell = incompleteCells[incompleteCellIndex];
+            int current = frontier.Pop();
+            int x = current % gridSpawner.width;
+            int y = current / gridSpawner.width;
 
-            // Try to expand the incomplete cell to a neighbour
-            int newNeighbour = TryOpenAWallOf(incompleteCell);
+            List<Direction> directions = GetShuffledDirections();
+            foreach (Direction direction in directions)
+            {
+                int nx = x + DELTA_X[(int)direction];
+                int ny = y + DELTA_Y[(int)direction];
 
-            if (newNeighbour < 0)
-            {
-                // No further expansion opportunity, cell is complete, remove from the list
-                numIncompleteCells--;
-                incompleteCells[incompleteCellIndex] = incompleteCells[numIncompleteCells];
-            }
-            else
-            {
-                // Add the new neighbour to the list of incomplete cells
-                incompleteCells[numIncompleteCells] = newNeighbour;
-                numIncompleteCells++;
+                if (nx >= 0 && nx < gridSpawner.width && ny >= 0 && ny < gridSpawner.height)
+                {
+                    int neighbor = nx + ny * gridSpawner.width;
+                    if (!visitedCells.Contains(neighbor))
+                    {
+                        RemoveWall(x, y, direction);
+                        visitedCells.Add(neighbor);
+                        frontier.Push(neighbor);
+                    }
+                }
             }
         }
+        //int[] incompleteCells = new int[gridXZ.GetNumberOfCells()];
+        //incompleteCells[0] = randomizer.Next(gridXZ.GetNumberOfCells());
+        //int numIncompleteCells = 1;
+
+        //while (numIncompleteCells > 0)
+        //{
+        //    Debug.Log(numIncompleteCells);
+        //    // Pick a random incomplete cell
+        //    int incompleteCellIndex = randomizer.Next(numIncompleteCells);
+        //    int incompleteCell = incompleteCells[incompleteCellIndex];
+
+        //    // Try to expand the incomplete cell to a neighbour
+        //    int newNeighbour = TryOpenAWallOf(incompleteCell);
+
+        //    if (newNeighbour < 0)
+        //    {
+        //        // No further expansion opportunity, cell is complete, remove from the list
+        //        numIncompleteCells--;
+        //        incompleteCells[incompleteCellIndex] = incompleteCells[numIncompleteCells];
+        //    }
+        //    else
+        //    {
+        //        // Add the new neighbour to the list of incomplete cells
+        //        incompleteCells[numIncompleteCells] = newNeighbour;
+        //        numIncompleteCells++;
+        //    }
+        //}
     }
 
 
@@ -273,6 +305,25 @@ public class PrimMazeGenerator : MonoBehaviour
         if (wallsToOpen > 0)
         {
             Debug.Log($"Exceeded maximum attempts to open a random wall: opened {n - wallsToOpen} out of {n}");
+        }
+    }
+
+    private void RemoveWall(int x, int y, Direction direction)
+    {
+        switch (direction)
+        {
+            case Direction.NORTH:
+                gridXZ.northWalls[x, y] = false;
+                break;
+            case Direction.EAST:
+                gridXZ.westWalls[x + 1, y] = false;
+                break;
+            case Direction.SOUTH:
+                gridXZ.northWalls[x, y + 1] = false;
+                break;
+            case Direction.WEST:
+                gridXZ.westWalls[x, y] = false;
+                break;
         }
     }
 
