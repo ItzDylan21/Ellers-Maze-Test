@@ -9,12 +9,14 @@ public class CustomGrid : MonoBehaviour
 {
     private int width;
     private int height;
+    private int startNode;
+    private int endNode;
     private int cellSize;
     private Vector3 originPos;
     private int[,] gridArray;
 
-    private bool[,] rightWallArray;
-    private bool[,] bottomWallArray;
+    public bool[,] northWalls;
+    public bool[,] westWalls;
     private Dictionary<Vector2Int, TextMesh> textMeshes = new Dictionary<Vector2Int, TextMesh>();
 
     // Direction enum to represent movement directions
@@ -36,36 +38,28 @@ public class CustomGrid : MonoBehaviour
     private static readonly int[] DELTA_Y = { -1, 0, +1, 0 };
 
 
-    public CustomGrid(int width, int height, int cellSize, Vector3 originPos)
+    public CustomGrid(int width, int height, int startNode, int endNode, int cellSize, Vector3 originPos)
     {
         this.width = width;
         this.height = height;
         this.cellSize = cellSize;
         this.originPos = originPos;
+        this.startNode = startNode;
+        this.endNode = endNode;
 
         gridArray = new int[width, height];
 
-        rightWallArray = new bool[width, height + 1];
-        bottomWallArray = new bool[width + 1, height];
-       
+        northWalls = new bool[width, height + 1];
+        westWalls = new bool[width + 1, height];
 
-        for (int x = 0; x < width; x++)
+        for (int x = 0; x < gridArray.GetLength(0); x++)
         {
-            for (int z = 0; z < height; z++)
+            for (int z = 0; z < gridArray.GetLength(1); z++)
             {
-                rightWallArray[x, z] = false;
-                bottomWallArray[x, z] = false;
+                Debug.DrawLine(GetWorldPos(x, z), GetWorldPos(x + 1, z), Color.white, 1000f);
+                Debug.DrawLine(GetWorldPos(x, z), GetWorldPos(x, z + 1), Color.white, 1000f);
             }
         }
-
-        //for (int x = 0; x < gridArray.GetLength(0); x++)
-        //{
-        //    for (int z = 0; z < gridArray.GetLength(1); z++)
-        //    {
-        //        //Debug.DrawLine(GetWorldPos(x, z), GetWorldPos(x + 1, z), Color.white, 1000f);
-        //        //Debug.DrawLine(GetWorldPos(x, z), GetWorldPos(x, z + 1), Color.white, 1000f);
-        //    }
-        //}
     }
 
     public int GetCellSize()
@@ -73,9 +67,22 @@ public class CustomGrid : MonoBehaviour
         return cellSize;
     }
 
-    public int cellNumber(int x, int z)
+    public int CellNumber(int x, int z)
     {
         return x + z * this.width;
+    }
+
+    public void ForAllCells(Action<int> action)
+    {
+        for (int cell = 0; cell < GetNumberOfCells(); cell++)
+        {
+            action(cell);
+        }
+    }
+
+    public int GetNumberOfCells()
+    {
+        return width * height;
     }
 
     public Vector3 GetWorldPos(int x, int z)
@@ -110,13 +117,13 @@ public class CustomGrid : MonoBehaviour
         switch(direction)
         {
             case Direction.NORTH:
-                return bottomWallArray[x, z];
+                return northWalls[x, z];
                 case Direction.EAST:
-                return rightWallArray[x, z + 1];
+                return westWalls[x + 1, z];
                 case Direction.SOUTH:
-                return bottomWallArray[x + 1, z];
+                return northWalls[x, z + 1];
                 case Direction.WEST:
-                return rightWallArray[x, z];
+                return westWalls[x, z];
         }
         return false;
     }
@@ -126,18 +133,26 @@ public class CustomGrid : MonoBehaviour
         switch (direction)
         {
             case Direction.NORTH:
-                bottomWallArray[x, z] = value;
+                northWalls[x, z] = value;
                 break;
             case Direction.EAST:
-                rightWallArray[x, z + 1] = value;
+                westWalls[x + 1, z] = value;
                 break;
             case Direction.SOUTH:
-                bottomWallArray[x + 1, z] = value;
+                northWalls[x, z + 1] = value;
                 break;
             case Direction.WEST:
-                rightWallArray[x, z] = value;
+                westWalls[x, z] = value;
                 break;
         }
+    }
+
+    public void SetWalls(int x, int z, bool value)
+    {
+        northWalls[x, z] = value;
+        westWalls[x + 1, z] = value;
+        northWalls[x, z + 1] = value;
+        westWalls[x, z] = value;
     }
 
 
@@ -181,108 +196,231 @@ public class CustomGrid : MonoBehaviour
         }
     }
 
-    private int GetNumWalls(Vector2Int cell)
+    public int GetNumWalls(int x, int z)
     {
         int numWalls = 0;
         foreach (Direction dir in Enum.GetValues(typeof(Direction)))
         {
-            numWalls += GetWall(cell.x, cell.y, dir) ? 1 : 0;
+            numWalls += GetWall(x, z, dir) ? 1 : 0;
         }
 
+        
         return numWalls;
     }
 
-    private int GetDirectNeighbor(Vector2Int cell, Direction dir)
+    public int GetDirectNeighbor(int x, int z, Direction dir)
     {
-        int neighborX = cell.x + DELTA_X[(int)dir];
-        int neighborY = cell.y + DELTA_Y[(int)dir];
+        int neighborX = x + DELTA_X[(int)dir];
+        int neighborY = z + DELTA_Y[(int)dir];
 
         if (neighborX < 0 || neighborX >= this.width) return -1;
         if (neighborY < 0 || neighborY >= this.height) return -1;
 
         // compute neighbour node number
-        return cellNumber(neighborX, neighborY);
+        return CellNumber(neighborX, neighborY);
     }
 
-
-    public HashSet<Vector2Int> GetNeighbors(Vector2Int fromVertex)
+    public HashSet<int> GetNeighbors(int fromVertex)
     {
-        var neighbors = new HashSet<Vector2Int>();
-
-        foreach (var direction in DirectionVectors)
+        HashSet<int> neighbors = new HashSet<int>();
+        foreach (Direction direction in Enum.GetValues(typeof(CustomGrid.Direction)))
         {
-            Vector2Int directionVec = direction.Value;
-            Vector2Int nextNeighbor = fromVertex + directionVec;
-
-            if (IsValidPosition(nextNeighbor) && !HasWallBetween(fromVertex, nextNeighbor, direction.Key))
+            int nextNeighbor = GetDirectNeighbor(posX(fromVertex), posY(fromVertex), direction);
+            if (nextNeighbor < 0 || GetWall(posX(fromVertex), posY(fromVertex), direction))
             {
-                // Follow the passage along the direction
-                Vector2Int neighbor = nextNeighbor;
-                int numWalls = GetNumWalls(neighbor);
-                Vector2Int nextNeighborAlongDirection;
-
-                // Continue following in the same direction if possible
-                do
-                {
-                    neighbor = nextNeighbor;
-                    numWalls = GetNumWalls(neighbor);
-                    nextNeighborAlongDirection = neighbor + directionVec;
-                    nextNeighbor = nextNeighborAlongDirection;
-                }
-                while (IsValidPosition(nextNeighbor) &&
-                       !HasWallBetween(neighbor, nextNeighbor, direction.Key) &&
-                       numWalls == 2); // Adjust this to match the requirement of having exactly 2 walls
-
-                // Debug log
-                Debug.Log($"Adding neighbor {neighbor} for fromVertex {fromVertex}");
-
-                // Try to continue around a corner if the path follows the constraints
-                if (numWalls == 2)
-                {
-                    Direction turnedDirection = GetPerpendicularDirection(direction.Key);
-                    nextNeighbor = neighbor + DirectionVectors[turnedDirection];
-
-                    while (IsValidPosition(nextNeighbor) &&
-                           !HasWallBetween(neighbor, nextNeighbor, turnedDirection) &&
-                           numWalls == 2)
-                    {
-                        do
-                        {
-                            neighbor = nextNeighbor;
-                            numWalls = GetNumWalls(neighbor);
-                            nextNeighbor = neighbor + DirectionVectors[turnedDirection];
-                        }
-                        while (IsValidPosition(nextNeighbor) &&
-                               !HasWallBetween(neighbor, nextNeighbor, turnedDirection) &&
-                               numWalls == 2);
-
-                        // Debug log
-                        Debug.Log($"Continuing around the corner, adding neighbor {neighbor}");
-
-                        // Try again around the original direction
-                        nextNeighbor = neighbor + directionVec;
-                        while (IsValidPosition(nextNeighbor) &&
-                               !HasWallBetween(neighbor, nextNeighbor, direction.Key) &&
-                               numWalls == 2)
-                        {
-                            neighbor = nextNeighbor;
-                            numWalls = GetNumWalls(neighbor);
-                            nextNeighbor = neighbor + directionVec;
-                        }
-
-                        nextNeighbor = neighbor + DirectionVectors[turnedDirection];
-                    }
-                }
-
-                neighbors.Add(neighbor);
+                continue;
             }
+
+            int neighbor, numWalls;
+
+            do
+            {
+                neighbor = nextNeighbor;
+                numWalls = GetNumWalls(posX(neighbor), posY(neighbor));
+                nextNeighbor = GetDirectNeighbor(posX(neighbor), posY(neighbor), direction);
+            } while (nextNeighbor >= 0 &&    // we have a further neighbour
+                    !GetWall(posX(neighbor), posY(neighbor), direction) && // the passage continues
+                    numWalls == NUM_DIRECTIONS - 2    // there is no junction or dead-end
+            );
+
+            Direction turnedDirection;
+            if (numWalls == NUM_DIRECTIONS - 2)
+            {
+                // Try a perpendicular direction by shifting the enum ordinal
+                turnedDirection = (Direction)(((int)direction + 1) % NUM_DIRECTIONS);
+
+                // Check if a wall is blocking the turned direction
+                if (GetWall(posX(neighbor), posY(neighbor), turnedDirection))
+                {
+                    // If blocked, try the other perpendicular direction
+                    turnedDirection = (Direction)(((int)direction + NUM_DIRECTIONS - 1) % NUM_DIRECTIONS);
+                }
+
+                // Get the next neighbor in the turned direction
+                int nextNeighbour = GetDirectNeighbor(posX(neighbor), posY(neighbor), turnedDirection);
+
+                // While the next neighbour is valid and the passage continues without a junction or dead-end
+                while (nextNeighbor >= 0 &&
+                       !GetWall(posX(neighbor), posY(neighbor), turnedDirection) &&
+                       numWalls == NUM_DIRECTIONS - 2)
+                {
+                    do
+                    {
+                        // Pass through to the next neighbor along the turned direction
+                        neighbor = nextNeighbour;
+                        numWalls = GetNumWalls(posX(neighbor), posY(neighbor));
+                        nextNeighbour = GetDirectNeighbor(posX(neighbor), posY(neighbor), turnedDirection);
+                    }
+                    while (nextNeighbor >= 0 &&
+                           !GetWall(posX(neighbor), posY(neighbor), turnedDirection) &&
+                           numWalls == NUM_DIRECTIONS - 2);
+
+
+
+                    // Try again around a corner along the original direction
+                    nextNeighbour = GetDirectNeighbor(posX(neighbor), posY(neighbor), direction);
+
+                    while (nextNeighbor >= 0 &&
+                           !GetWall(posX(neighbor), posY(neighbor), direction) &&
+                           numWalls == NUM_DIRECTIONS - 2)
+                    {
+                        // Pass through to the next neighbor along the original direction
+                        neighbor = nextNeighbour;
+                        numWalls = GetNumWalls(posX(neighbor), posY(neighbor));
+                        nextNeighbour = GetDirectNeighbor(posX(neighbor), posY(neighbor), direction);
+                    }
+
+                    // Go back to the perpendicular direction and try again
+                    nextNeighbour = GetDirectNeighbor(posX(neighbor), posY(neighbor), turnedDirection);
+                }
+            }
+            neighbors.Add(neighbor);
         }
-
-        // Debug log
-        Debug.Log($"Neighbors for fromVertex {fromVertex}: {string.Join(", ", neighbors.Select(n => $"({n.x}, {n.y})"))}");
-
         return neighbors;
     }
+
+    //public HashSet<int> GetNeighbors(int fromVertex)
+    //{
+    //    HashSet<int> neighbors = new HashSet<int>();
+    //    int fromX = posX(fromVertex);
+    //    int fromY = posY(fromVertex);
+
+    //    // Iterate over all possible directions
+    //    foreach (Direction direction in Enum.GetValues(typeof(Direction)))
+    //    {
+    //        // Get the direct neighbor in the current direction
+    //        int nextNeighbor = GetDirectNeighbor(fromX, fromY, direction);
+
+    //        // Check if the next neighbor is valid and not blocked by a wall
+    //        if (nextNeighbor < 0 && GetWall(fromX, fromY, direction))
+    //        {
+    //            // Add the valid neighbor
+    //            neighbors.Add(nextNeighbor);
+
+    //            // Continue traversing in the same direction
+    //            int currentVertex = nextNeighbor;
+    //            Direction[] perpendicularDirections = GetPerpendicularDirections(direction);
+    //            bool traversedInDirection = false;
+
+    //            while (true)
+    //            {
+    //                // Move to the next vertex in the current direction
+    //                int nextVertex = GetDirectNeighbor(posX(currentVertex), posY(currentVertex), direction);
+
+    //                // Break if the next vertex is invalid or blocked
+    //                if (nextVertex < 0 || GetWall(posX(currentVertex), posY(currentVertex), direction))
+    //                {
+    //                    break;
+    //                }
+
+    //                // Add the valid vertex and continue
+    //                neighbors.Add(nextVertex);
+    //                currentVertex = nextVertex;
+
+    //                // Check perpendicular directions if not yet done
+    //                if (!traversedInDirection)
+    //                {
+    //                    foreach (Direction perpendicularDirection in perpendicularDirections)
+    //                    {
+    //                        int perpendicularNeighbor = GetDirectNeighbor(posX(currentVertex), posY(currentVertex), perpendicularDirection);
+
+    //                        if (perpendicularNeighbor >= 0 && !GetWall(posX(currentVertex), posY(currentVertex), perpendicularDirection))
+    //                        {
+    //                            // Add perpendicular neighbors if valid
+    //                            neighbors.Add(perpendicularNeighbor);
+    //                        }
+    //                    }
+    //                    traversedInDirection = true; // Ensure perpendicular directions are checked once
+    //                }
+    //            }
+    //        }
+    //    }
+    //    return neighbors;
+    //}
+
+    // Helper method to get perpendicular directions
+    private Direction[] GetPerpendicularDirections(Direction direction)
+    {
+        // Assuming 4 directions: NORTH, EAST, SOUTH, WEST
+        switch (direction)
+        {
+            case Direction.NORTH:
+                return new[] { Direction.WEST, Direction.EAST };
+            case Direction.EAST:
+                return new[] { Direction.NORTH, Direction.SOUTH };
+            case Direction.SOUTH:
+                return new[] { Direction.EAST, Direction.WEST };
+            case Direction.WEST:
+                return new[] { Direction.SOUTH, Direction.NORTH };
+            default:
+                return new Direction[0];
+        }
+    }
+
+
+
+    // Method to get all reachable vertices from a starting point using DFS
+    public HashSet<int> GetAllVertices(int startVertex)
+    {
+        HashSet<int> visitedVertices = new HashSet<int>();
+        // Start recursive traversal
+        GetAllVerticesRecursive(startVertex, visitedVertices);
+        return visitedVertices;
+    }
+
+    // Recursive method to traverse the maze/grid and collect all vertices
+    private void GetAllVerticesRecursive(int currentVertex, HashSet<int> visitedVertices)
+    {
+        Debug.Log($"{posX(currentVertex)}, {posY(currentVertex)}");
+        // Base case: If the current vertex is already visited, return
+        if (visitedVertices.Contains(currentVertex))
+        {
+            return;
+        }
+
+        // Add the current vertex to the visited set
+        visitedVertices.Add(currentVertex);
+
+        // Get the neighbors of the current vertex using the provided GetNeighbors method
+        HashSet<int> neighbors = GetNeighbors(currentVertex);
+
+        // Recursively call this method for each unvisited neighbor
+        foreach (var neighbor in neighbors)
+        {
+            GetAllVerticesRecursive(neighbor, visitedVertices);
+        }
+    }
+
+    public int posX(int cell)
+    {
+        return cell % width;
+    }
+
+    public int posY(int cell)
+    {
+        return cell / width;
+    }
+
 
 
 

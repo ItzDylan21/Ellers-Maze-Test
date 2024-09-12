@@ -355,23 +355,23 @@ static class Extensions
 
                 PlaceWallXZ(dir, coords[0], coords[1]);
 
-            // Ensure the neighboring cell also has the opposite wall
-            if (dir == Vector3.right) // Right wall
-            {
-                // Place left wall on the neighboring cell
-                if (coords[0] + 1 < gridSpawner.width)
-                {
-                    PlaceWallXZ(Vector3.right, coords[0] + 1, coords[1]);
-                }
-            }
-            else if (dir == Vector3.forward) // Bottom wall
-            {
-                // Place top wall on the neighboring cell
-                if (coords[1] + 1 < gridSpawner.height)
-                {
-                    PlaceWallXZ(Vector3.forward, coords[0], coords[1] + 1);
-                }
-            }
+            //// Ensure the neighboring cell also has the opposite wall
+            //if (dir == Vector3.right) // Right wall
+            //{
+            //    // Place left wall on the neighboring cell
+            //    if (coords[0] + 1 < gridSpawner.width)
+            //    {
+            //        PlaceWallXZ(Vector3.right, coords[0] + 1, coords[1]);
+            //    }
+            //}
+            //else if (dir == Vector3.forward) // Bottom wall
+            //{
+            //    // Place top wall on the neighboring cell
+            //    if (coords[1] + 1 < gridSpawner.height)
+            //    {
+            //        PlaceWallXZ(Vector3.forward, coords[0], coords[1] + 1);
+            //    }
+            //}
         }
 
         }
@@ -500,18 +500,18 @@ static class Extensions
             Debug.Log($"{current.x} {current.y}");
 
             // Get walkable neighbors
-            foreach (Vector2Int neighbor in GetWalkableNeighbors(current))
-            {
-                if (!visitedNodes.Contains(neighbor))
-                {
-                    frontier.Enqueue(neighbor);
-                    visitedNodes.Add(neighbor);
-                    cameFrom[neighbor] = current;
+            //foreach (Vector2Int neighbor in GetWalkableNeighbors(current))
+            //{
+            //    if (!visitedNodes.Contains(neighbor))
+            //    {
+            //        frontier.Enqueue(neighbor);
+            //        visitedNodes.Add(neighbor);
+            //        cameFrom[neighbor] = current;
 
-                    // Mark the visited node as red
-                    gridXZ.UpdateTextColor(neighbor, Color.red);
-                }
-            }
+            //        // Mark the visited node as red
+            //        gridXZ.UpdateTextColor(neighbor, Color.red);
+            //    }
+            //}
         }
 
         // If no path is found
@@ -538,34 +538,34 @@ static class Extensions
         return path;
     }
 
-    private List<Vector2Int> GetWalkableNeighbors(Vector2Int current)
-    {
-        // Get neighbors from gridXZ as a HashSet
-        HashSet<Vector2Int> neighborSet = gridXZ.GetNeighbors(current);
+    //private List<Vector2Int> GetWalkableNeighbors(Vector2Int current)
+    //{
+    //    // Get neighbors from gridXZ as a HashSet
+    //    HashSet<Vector2Int> neighborSet = gridXZ.GetNeighbors(current);
 
-        // Convert HashSet to List
-        List<Vector2Int> neighbors = new List<Vector2Int>(neighborSet);
+    //    // Convert HashSet to List
+    //    List<Vector2Int> neighbors = new List<Vector2Int>(neighborSet);
 
 
-        // Define the possible neighbor directions and their respective wall checks
-        Vector2Int[] directions = {
-        new Vector2Int(1, 0), // Right
-        new Vector2Int(-1, 0), // Left
-        new Vector2Int(0, 1), // Up
-        new Vector2Int(0, -1) // Down
-    };
+    //    // Define the possible neighbor directions and their respective wall checks
+    //    Vector2Int[] directions = {
+    //    new Vector2Int(1, 0), // Right
+    //    new Vector2Int(-1, 0), // Left
+    //    new Vector2Int(0, 1), // Up
+    //    new Vector2Int(0, -1) // Down
+    //};
 
-        foreach (var dir in directions)
-        {
-            Vector2Int neighbor = current + dir;
-            if (IsWithinBounds(neighbor) && CanMoveTo(current, dir))
-            {
-                neighbors.Add(neighbor);
-            }
-        }
+    //    foreach (var dir in directions)
+    //    {
+    //        Vector2Int neighbor = current + dir;
+    //        if (IsWithinBounds(neighbor) && CanMoveTo(current, dir))
+    //        {
+    //            neighbors.Add(neighbor);
+    //        }
+    //    }
 
-        return neighbors;
-    }
+    //    return neighbors;
+    //}
 
     private bool IsWithinBounds(Vector2Int pos)
     {
