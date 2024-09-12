@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Unity.VisualScripting;
+using static UnityEngine.XR.Interaction.Toolkit.Inputs.Interactions.SectorInteraction;
 
 public class PrimMazeGenerator : MonoBehaviour
 {
@@ -36,7 +37,7 @@ public class PrimMazeGenerator : MonoBehaviour
         InitializeWalls();
         GenerateRandomizedPrim();
         ConfigureEntryAndExit();
-        RemoveRandomWalls(3 * gridSpawner.width);
+        //RemoveRandomWalls(3 * gridSpawner.width);
         VertexText(gridXZ.GetAllVertices(gridSpawner.startNode), Color.blue, 1);
         BuildMazeInUnity();
     }
@@ -75,6 +76,56 @@ public class PrimMazeGenerator : MonoBehaviour
 
     private void GenerateRandomizedPrim()
     {
+        //HashSet<int> visitedCells = new HashSet<int>();
+        //Queue<int> queue = new Queue<int>();
+
+        //int startX = randomizer.Next(0, gridSpawner.width);
+        //int startY = randomizer.Next(0, gridSpawner.height);
+        //int start = startX + startY * gridSpawner.width;
+
+        //queue.Enqueue(start);
+        //visitedCells.Add(start);
+
+        //while (queue.Count > 0)
+        //{
+        //    int current = queue.Dequeue();
+        //    int x = current % gridSpawner.width;
+        //    int y = current / gridSpawner.width;
+
+        //    List<Direction> directions = GetShuffledDirections();
+
+        //    bool hasUnvisitedNeighbor = false;
+
+        //    foreach (Direction direction in directions)
+        //    {
+        //        int nx = x + DELTA_X[(int)direction];
+        //        int ny = y + DELTA_Y[(int)direction];
+
+        //        if (nx >= 0 && nx < gridSpawner.width && ny >= 0 && ny < gridSpawner.height)
+        //        {
+        //            int neighbor = nx + ny * gridSpawner.width;
+        //            if (!visitedCells.Contains(neighbor))
+        //            {
+        //                RemoveWall(x, y, direction);
+        //                visitedCells.Add(neighbor);
+        //                queue.Enqueue(neighbor);
+        //                hasUnvisitedNeighbor = true;
+        //                break; // Exit the loop once we've found an unvisited neighbor
+        //            }
+        //        }
+        //    }
+
+        //    // If no unvisited neighbors were found, keep looking for a node in the queue with unvisited neighbors
+        //    if (!hasUnvisitedNeighbor)
+        //    {
+        //        // If there are no nodes left in the queue, we are done
+        //        if (queue.Count == 0)
+        //        {
+        //            break;
+        //        }
+        //    }
+        //}
+
         HashSet<int> visitedCells = new HashSet<int>();
         Stack<int> frontier = new Stack<int>();
         int startX = randomizer.Next(0, gridSpawner.width);
@@ -107,6 +158,7 @@ public class PrimMazeGenerator : MonoBehaviour
                 }
             }
         }
+
         //int[] incompleteCells = new int[gridXZ.GetNumberOfCells()];
         //incompleteCells[0] = randomizer.Next(gridXZ.GetNumberOfCells());
         //int numIncompleteCells = 1;
@@ -135,6 +187,28 @@ public class PrimMazeGenerator : MonoBehaviour
         //    }
         //}
     }
+
+    private void AddFrontier(int cell, List<int> frontier, HashSet<int> visitedCells)
+    {
+        int x = cell % gridSpawner.width;
+        int y = cell / gridSpawner.width;
+
+        foreach (Direction direction in Enum.GetValues(typeof(Direction)))
+        {
+            int nx = x + DELTA_X[(int)direction];
+            int ny = y + DELTA_Y[(int)direction];
+
+            if (nx >= 0 && nx < gridSpawner.width && ny >= 0 && ny < gridSpawner.height)
+            {
+                int neighbor = nx + ny * gridSpawner.width;
+                if (!visitedCells.Contains(neighbor) && !frontier.Contains(neighbor))
+                {
+                    frontier.Add(neighbor);
+                }
+            }
+        }
+    }
+
 
 
     private int TryOpenAWallOf(int incompleteCell)
