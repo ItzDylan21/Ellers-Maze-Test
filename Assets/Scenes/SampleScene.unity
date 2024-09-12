@@ -176,7 +176,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &667985035
 Transform:
   m_ObjectHideFlags: 0
@@ -204,9 +204,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3501311b6f3c8f5488b8a302a530d534, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  gridSpawner: {fileID: 1030893441}
   wallPrefab: {fileID: 1359327477}
-  width: 50
-  height: 50
+  gridCellIndicator: {fileID: 225416714}
+  WallYValue: 2
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0
@@ -437,8 +438,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d6162b81564ecc548b9aadce38a7a4ef, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  width: 10
-  height: 10
+  width: 20
+  height: 20
+  startNode: 0
+  endNode: 0
   cellSize: 10
   gridSpawnPos: {fileID: 1191605792}
   grid: {fileID: 0}
@@ -564,34 +567,13 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1904642765}
-  - component: {fileID: 1904642764}
   m_Layer: 0
   m_Name: EllersMaze
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1904642764
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1904642763}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 292c4521ddcb9e64a809e4179f6ba5e2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  gridSpawner: {fileID: 1030893441}
-  RWallSpawnPercentage: 60
-  BWallSpawnPercentage: 90
-  wall: {fileID: 1359327477}
-  gridCellIndicator: {fileID: 225416714}
-  WallYValue: 2
-  startPoint: {x: 0, y: 0}
-  endPoint: {x: 9, y: 9}
+  m_IsActive: 0
 --- !u!4 &1904642765
 Transform:
   m_ObjectHideFlags: 0
