@@ -11,6 +11,8 @@ public class CustomGrid : MonoBehaviour
     private int height;
     private int startNode;
     private int endNode;
+    private Material startNodeMaterial;
+    private Material endNodeMaterial;
     private int cellSize;
     private Vector3 originPos;
     private int[,] gridArray;
@@ -38,14 +40,16 @@ public class CustomGrid : MonoBehaviour
     private static readonly int[] DELTA_Y = { -1, 0, +1, 0 };
 
 
-    public CustomGrid(int width, int height, int startNode, int endNode, int cellSize, Vector3 originPos)
+    public CustomGrid(int width, int height, int startNode, Material startNodeMaterial, int endNode, Material endNodeMaterial, int cellSize, Vector3 originPos)
     {
         this.width = width;
         this.height = height;
         this.cellSize = cellSize;
         this.originPos = originPos;
         this.startNode = startNode;
+        this.startNodeMaterial = startNodeMaterial;
         this.endNode = endNode;
+        this.endNodeMaterial = endNodeMaterial;
 
         gridArray = new int[width, height];
 
@@ -274,7 +278,6 @@ public class CustomGrid : MonoBehaviour
     // Recursive method to traverse the maze/grid and collect all vertices
     private void GetAllVerticesRecursive(int currentVertex, HashSet<int> visitedVertices)
     {
-        Debug.Log($"{posX(currentVertex)}, {posY(currentVertex)}");
         // Base case: If the current vertex is already visited, return
         if (visitedVertices.Contains(currentVertex))
         {

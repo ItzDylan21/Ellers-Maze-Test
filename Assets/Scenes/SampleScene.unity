@@ -500,10 +500,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d6162b81564ecc548b9aadce38a7a4ef, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  width: 20
-  height: 10
+  width: 50
+  height: 50
   startNode: 0
   endNode: 0
+  startNodeMaterial: {fileID: 2100000, guid: 8315ef42d3d615e4e891d89ef0bf8fb8, type: 2}
+  endNodeMaterial: {fileID: 2100000, guid: c39e8a1f2d085014e9c9e6790d81f3b2, type: 2}
   cellSize: 10
   gridSpawnPos: {fileID: 1191605792}
   grid: {fileID: 0}

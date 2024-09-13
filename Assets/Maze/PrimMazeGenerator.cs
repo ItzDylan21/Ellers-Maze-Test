@@ -36,7 +36,7 @@ public class PrimMazeGenerator : MonoBehaviour
         InitializeWalls();
         GenerateRandomizedPrim();
         ConfigureEntryAndExit();
-        RemoveRandomWalls(2 * gridSpawner.width);
+        RemoveRandomWalls(3 * gridSpawner.width);
         VertexText(gridXZ.GetAllVertices(gridSpawner.startNode), Color.blue, 1);
         BuildMazeInUnity();
     }
@@ -153,9 +153,35 @@ public class PrimMazeGenerator : MonoBehaviour
 
     private void ConfigureEntryAndExit()
     {
+        // Set the start node
         gridSpawner.startNode = gridXZ.CellNumber(2 * gridSpawner.width / 3, 2 * gridSpawner.height / 3);
-        SetWalls(gridSpawner.startNode, false);
+        SetWalls(gridSpawner.startNode, false); // Remove walls at start node
 
+        // Position the start node indicator
+        Vector3 startNodePosition = gridXZ.GetWorldPos(gridXZ.posX(gridSpawner.startNode), gridXZ.posY(gridSpawner.startNode));
+        GameObject startIndicator = Instantiate(gridCellIndicator, startNodePosition, Quaternion.identity);
+
+        // Find the child object that has the MeshRenderer (if the plane is nested)
+        Transform startPlane = startIndicator.transform.Find("Plane"); // Assuming the plane's name is "Plane"
+        if (startPlane != null)
+        {
+            MeshRenderer startMeshRenderer = startPlane.GetComponent<MeshRenderer>();
+            if (startMeshRenderer != null && gridSpawner.startNodeMaterial != null)
+            {
+                startMeshRenderer.material = gridSpawner.startNodeMaterial;  // Assign green material
+                Debug.Log("Assigned green material to start node");
+            }
+            else
+            {
+                Debug.LogError("MeshRenderer or startNodeMaterial is missing on the start node plane!");
+            }
+        }
+        else
+        {
+            Debug.LogError("Child object 'Plane' not found in startIndicator prefab!");
+        }
+
+        // Set the end node
         bool choice = randomizer.Next(0, 2) == 1;
         CustomGrid.Direction exitDirection = choice ? CustomGrid.Direction.NORTH : CustomGrid.Direction.WEST;
         int exitX = choice ? randomizer.Next(gridSpawner.width) : 0;
@@ -163,7 +189,32 @@ public class PrimMazeGenerator : MonoBehaviour
 
         gridXZ.SetWall(exitX, exitY, exitDirection, false);
         gridSpawner.endNode = gridXZ.CellNumber(exitX, exitY);
+
+        // Position the end node indicator
+        Vector3 endNodePosition = gridXZ.GetWorldPos(exitX, exitY);
+        GameObject endIndicator = Instantiate(gridCellIndicator, endNodePosition, Quaternion.identity);
+
+        // Find the child object that has the MeshRenderer (if the plane is nested)
+        Transform endPlane = endIndicator.transform.Find("Plane"); // Assuming the plane's name is "Plane"
+        if (endPlane != null)
+        {
+            MeshRenderer endMeshRenderer = endPlane.GetComponent<MeshRenderer>();
+            if (endMeshRenderer != null && gridSpawner.endNodeMaterial != null)
+            {
+                endMeshRenderer.material = gridSpawner.endNodeMaterial;  // Assign red material
+                Debug.Log("Assigned red material to end node");
+            }
+            else
+            {
+                Debug.LogError("MeshRenderer or endNodeMaterial is missing on the end node plane!");
+            }
+        }
+        else
+        {
+            Debug.LogError("Child object 'Plane' not found in endIndicator prefab!");
+        }
     }
+
 
     private void BuildMazeInUnity()
     {
@@ -349,5 +400,5 @@ public class PrimMazeGenerator : MonoBehaviour
             numWalls += (z > 0 && gridXZ.GetWall(x - 1, z - 1, CustomGrid.Direction.EAST)) ? 1 : 0;          // check up
         }
         return numWalls;
-    }
+    } 
 }
