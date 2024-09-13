@@ -28,7 +28,6 @@ public class PrimMazeGenerator : MonoBehaviour
     void Start()
     {
         gridXZ = gridSpawner.grid;
-
         GenerateMaze();
     }
 
@@ -37,110 +36,62 @@ public class PrimMazeGenerator : MonoBehaviour
         InitializeWalls();
         GenerateRandomizedPrim();
         ConfigureEntryAndExit();
-        //RemoveRandomWalls(3 * gridSpawner.width);
+        RemoveRandomWalls(2 * gridSpawner.width);
         VertexText(gridXZ.GetAllVertices(gridSpawner.startNode), Color.blue, 1);
         BuildMazeInUnity();
     }
 
     private void InitializeWalls()
     {
-        // Initialize all walls as true
         gridXZ.ForAllCells(cell =>
         {
             SetWalls(cell, true);
         });
 
-        // Set outer walls - always true
+        // Set outer walls
         for (int x = 0; x < gridSpawner.width; x++)
         {
-            // Top row (y = 0)
-
+            // Top row
             gridXZ.SetWall(x, gridSpawner.height, CustomGrid.Direction.NORTH, true);
 
-            // Bottom row (y = height)
-
+            // Bottom row
             gridXZ.SetWall(x, 0, CustomGrid.Direction.SOUTH, true);
         }
 
         for (int y = 0; y < gridSpawner.height; y++)
         {
-            // Left column (x = 0)
-
+            // Left column
             gridXZ.SetWall(gridSpawner.width, y, CustomGrid.Direction.WEST, true);
 
-            // Right column (x = width)
-
+            // Right column
             gridXZ.SetWall(0, y, CustomGrid.Direction.EAST, true);
         }
     }
 
     private void GenerateRandomizedPrim()
     {
-        //HashSet<int> visitedCells = new HashSet<int>();
-        //Queue<int> queue = new Queue<int>();
+        int totalCells = gridSpawner.width * gridSpawner.height; // Total number of cells
+        HashSet<int> visitedCells = new HashSet<int>();          // Track visited cells
+        Queue<int> queue = new Queue<int>();                     // Queue to manage cell expansion
 
-        //int startX = randomizer.Next(0, gridSpawner.width);
-        //int startY = randomizer.Next(0, gridSpawner.height);
-        //int start = startX + startY * gridSpawner.width;
-
-        //queue.Enqueue(start);
-        //visitedCells.Add(start);
-
-        //while (queue.Count > 0)
-        //{
-        //    int current = queue.Dequeue();
-        //    int x = current % gridSpawner.width;
-        //    int y = current / gridSpawner.width;
-
-        //    List<Direction> directions = GetShuffledDirections();
-
-        //    bool hasUnvisitedNeighbor = false;
-
-        //    foreach (Direction direction in directions)
-        //    {
-        //        int nx = x + DELTA_X[(int)direction];
-        //        int ny = y + DELTA_Y[(int)direction];
-
-        //        if (nx >= 0 && nx < gridSpawner.width && ny >= 0 && ny < gridSpawner.height)
-        //        {
-        //            int neighbor = nx + ny * gridSpawner.width;
-        //            if (!visitedCells.Contains(neighbor))
-        //            {
-        //                RemoveWall(x, y, direction);
-        //                visitedCells.Add(neighbor);
-        //                queue.Enqueue(neighbor);
-        //                hasUnvisitedNeighbor = true;
-        //                break; // Exit the loop once we've found an unvisited neighbor
-        //            }
-        //        }
-        //    }
-
-        //    // If no unvisited neighbors were found, keep looking for a node in the queue with unvisited neighbors
-        //    if (!hasUnvisitedNeighbor)
-        //    {
-        //        // If there are no nodes left in the queue, we are done
-        //        if (queue.Count == 0)
-        //        {
-        //            break;
-        //        }
-        //    }
-        //}
-
-        HashSet<int> visitedCells = new HashSet<int>();
-        Stack<int> frontier = new Stack<int>();
+        // Start from a random initial cell
         int startX = randomizer.Next(0, gridSpawner.width);
         int startY = randomizer.Next(0, gridSpawner.height);
+        int start = startX + startY * gridSpawner.width;
 
-        visitedCells.Add(startX + startY * gridSpawner.width);
-        frontier.Push(startX + startY * gridSpawner.width);
+        queue.Enqueue(start);
+        visitedCells.Add(start);
 
-        while (frontier.Count > 0)
+        while (queue.Count > 0)
         {
-            int current = frontier.Pop();
+            int current = queue.Dequeue();
             int x = current % gridSpawner.width;
             int y = current / gridSpawner.width;
 
             List<Direction> directions = GetShuffledDirections();
+
+            bool hasUnvisitedNeighbor = false;
+
             foreach (Direction direction in directions)
             {
                 int nx = x + DELTA_X[(int)direction];
@@ -153,94 +104,51 @@ public class PrimMazeGenerator : MonoBehaviour
                     {
                         RemoveWall(x, y, direction);
                         visitedCells.Add(neighbor);
-                        frontier.Push(neighbor);
+                        queue.Enqueue(neighbor);
+                        hasUnvisitedNeighbor = true;
+                        break; // Continue with the next cell
                     }
                 }
             }
-        }
 
-        //int[] incompleteCells = new int[gridXZ.GetNumberOfCells()];
-        //incompleteCells[0] = randomizer.Next(gridXZ.GetNumberOfCells());
-        //int numIncompleteCells = 1;
-
-        //while (numIncompleteCells > 0)
-        //{
-        //    Debug.Log(numIncompleteCells);
-        //    // Pick a random incomplete cell
-        //    int incompleteCellIndex = randomizer.Next(numIncompleteCells);
-        //    int incompleteCell = incompleteCells[incompleteCellIndex];
-
-        //    // Try to expand the incomplete cell to a neighbour
-        //    int newNeighbour = TryOpenAWallOf(incompleteCell);
-
-        //    if (newNeighbour < 0)
-        //    {
-        //        // No further expansion opportunity, cell is complete, remove from the list
-        //        numIncompleteCells--;
-        //        incompleteCells[incompleteCellIndex] = incompleteCells[numIncompleteCells];
-        //    }
-        //    else
-        //    {
-        //        // Add the new neighbour to the list of incomplete cells
-        //        incompleteCells[numIncompleteCells] = newNeighbour;
-        //        numIncompleteCells++;
-        //    }
-        //}
-    }
-
-    private void AddFrontier(int cell, List<int> frontier, HashSet<int> visitedCells)
-    {
-        int x = cell % gridSpawner.width;
-        int y = cell / gridSpawner.width;
-
-        foreach (Direction direction in Enum.GetValues(typeof(Direction)))
-        {
-            int nx = x + DELTA_X[(int)direction];
-            int ny = y + DELTA_Y[(int)direction];
-
-            if (nx >= 0 && nx < gridSpawner.width && ny >= 0 && ny < gridSpawner.height)
+            // If no unvisited neighbors, check if there are still unvisited cells
+            if (!hasUnvisitedNeighbor && queue.Count == 0 && visitedCells.Count < totalCells)
             {
-                int neighbor = nx + ny * gridSpawner.width;
-                if (!visitedCells.Contains(neighbor) && !frontier.Contains(neighbor))
-                {
-                    frontier.Add(neighbor);
-                }
+                // Pick a random unvisited cell to continue
+                Vector2Int randomUnvisited = FindRandomUnvisitedCell(visitedCells, totalCells);
+                int randomCell = randomUnvisited.x + randomUnvisited.y * gridSpawner.width;
+
+                queue.Enqueue(randomCell);
+                visitedCells.Add(randomCell);
             }
         }
     }
 
-
-
-    private int TryOpenAWallOf(int incompleteCell)
+    private Vector2Int FindRandomUnvisitedCell(HashSet<int> visitedCells, int totalCells)
     {
-        int firstDirectionIndex = randomizer.Next(NUM_DIRECTIONS);
+        List<int> unvisitedCells = new List<int>();
 
-        for (int d = 0; d < NUM_DIRECTIONS; d++)
+        // Iterate through all possible cells to find unvisited cells
+        for (int i = 0; i < totalCells; i++)
         {
-            // Try the next direction for removing a wall
-            CustomGrid.Direction direction = (CustomGrid.Direction)((firstDirectionIndex + d) % NUM_DIRECTIONS);
-
-            // Check if this direction has a wall
-            if (!gridXZ.GetWall(gridXZ.posX(incompleteCell), gridXZ.posY(incompleteCell), direction)) continue;
-
-            // Find the neighbor
-            int neighbour = gridXZ.GetDirectNeighbor(gridXZ.posX(incompleteCell), gridXZ.posY(incompleteCell), direction);
-
-            // Check whether a boundary has been exceeded
-            if (neighbour < 0) continue;
-
-            // Check whether the neighbor has not been visited before
-            if (gridXZ.GetNumWalls(gridXZ.posX(incompleteCell), gridXZ.posY(incompleteCell)) == NUM_DIRECTIONS)
+            if (!visitedCells.Contains(i))
             {
-                // Open the wall
-                gridXZ.SetWall(gridXZ.posX(incompleteCell), gridXZ.posY(incompleteCell), direction, false);
-
-                return neighbour;
+                unvisitedCells.Add(i);
             }
         }
 
-        // No further expansion options here...
-        return -1;
+        // Pick a random unvisited cell
+        if (unvisitedCells.Count > 0)
+        {
+            int randomIndex = randomizer.Next(0, unvisitedCells.Count);
+            int randomCell = unvisitedCells[randomIndex];
+
+            int x = randomCell % gridSpawner.width;
+            int y = randomCell / gridSpawner.width;
+            return new Vector2Int(x, y);
+        }
+
+        return Vector2Int.zero; // Fallback! This should'nt happen if there are unvisted cells remaining
     }
 
     private void ConfigureEntryAndExit()
@@ -301,36 +209,35 @@ public class PrimMazeGenerator : MonoBehaviour
 
     private void VertexText(HashSet<int> vertices, Color textColor, int yVal)
     {
-        Debug.Log(vertices.Count);
-        // Create a new GameObject for the vertex text container
+        Debug.Log("Total vertices: " + vertices.Count);
+
         GameObject gridTextObj = new GameObject("GridText");
 
-        // Iterate over each vertex in the set of vertices
         foreach (var vertex in vertices)
         {
-            // Convert the integer vertex back into (x, y) coordinates
             int x = vertex % gridSpawner.width;
             int y = vertex / gridSpawner.width;
 
-            // Use the vertex coordinates as the label text in the format "(x, y)"
             string labelText = $"({x}, {y})";
 
-            // Create a Text GameObject for the vertex
-            var text = new GameObject($"VertexText ({x}, {y})");
-            var mesh = text.AddComponent<TextMesh>();
+            GameObject text = new GameObject($"VertexText ({x}, {y})");
+            TextMesh mesh = text.AddComponent<TextMesh>();
             mesh.text = labelText;
-            mesh.color = textColor;  // Set the color of the text
+            mesh.color = textColor;
 
-            // Calculate the position in world space based on the grid system
+            // Calculate world position
             Vector3 gridPos = gridXZ.GetWorldPos(x, y);
             gridPos = new Vector3(gridPos.x + gridXZ.GetCellSize() / 2, yVal, gridPos.z + gridXZ.GetCellSize() / 2);
-            text.transform.position = gridPos;
-            text.transform.parent = gridTextObj.transform; // Make the text a child of the container
 
-            // Store reference to the TextMesh to allow updates later if needed
+            // Debug.Log($"Placing text at {gridPos} for vertex ({x}, {y})");
+
+            text.transform.position = gridPos;
+            text.transform.parent = gridTextObj.transform;
+
             gridXZ.AddTextMesh(x, y, mesh);
         }
     }
+
 
 
     private void SetWalls(int cell, bool value)

@@ -155,45 +155,9 @@ public class CustomGrid : MonoBehaviour
         westWalls[x, z] = value;
     }
 
-
     public int[,] GetGrid()
     {
         return gridArray;
-    }
-
-
-    private bool IsValidPosition(Vector2Int position)
-    {
-        return position.x >= 0 && position.x < width && position.y >= 0 && position.y < height;
-    }
-
-    private bool HasWallBetween(Vector2Int cellA, Vector2Int cellB, Direction direction)
-    {
-        switch (direction)
-        {
-            case Direction.EAST:
-                return GetWall(cellA.x, cellA.y, Direction.EAST);
-            case Direction.WEST:
-                return GetWall(cellB.x, cellB.y + 1, Direction.WEST);
-            case Direction.NORTH:
-                return GetWall(cellA.x + 1, cellA.y, Direction.NORTH);
-            case Direction.SOUTH:
-                return GetWall(cellB.x, cellB.y, Direction.SOUTH);
-            default:
-                return false;
-        }
-    }
-
-    private Direction GetPerpendicularDirection(Direction direction)
-    {
-        switch (direction)
-        {
-            case Direction.EAST: return Direction.NORTH;
-            case Direction.WEST: return Direction.SOUTH;
-            case Direction.NORTH: return Direction.EAST;
-            case Direction.SOUTH: return Direction.WEST;
-            default: return Direction.EAST; // Default value
-        }
     }
 
     public int GetNumWalls(int x, int z)
@@ -276,7 +240,6 @@ public class CustomGrid : MonoBehaviour
                            numWalls == NUM_DIRECTIONS - 2);
 
 
-
                     // Try again around a corner along the original direction
                     nextNeighbour = GetDirectNeighbor(posX(neighbor), posY(neighbor), direction);
 
@@ -299,87 +262,7 @@ public class CustomGrid : MonoBehaviour
         return neighbors;
     }
 
-    //public HashSet<int> GetNeighbors(int fromVertex)
-    //{
-    //    HashSet<int> neighbors = new HashSet<int>();
-    //    int fromX = posX(fromVertex);
-    //    int fromY = posY(fromVertex);
-
-    //    // Iterate over all possible directions
-    //    foreach (Direction direction in Enum.GetValues(typeof(Direction)))
-    //    {
-    //        // Get the direct neighbor in the current direction
-    //        int nextNeighbor = GetDirectNeighbor(fromX, fromY, direction);
-
-    //        // Check if the next neighbor is valid and not blocked by a wall
-    //        if (nextNeighbor < 0 && GetWall(fromX, fromY, direction))
-    //        {
-    //            // Add the valid neighbor
-    //            neighbors.Add(nextNeighbor);
-
-    //            // Continue traversing in the same direction
-    //            int currentVertex = nextNeighbor;
-    //            Direction[] perpendicularDirections = GetPerpendicularDirections(direction);
-    //            bool traversedInDirection = false;
-
-    //            while (true)
-    //            {
-    //                // Move to the next vertex in the current direction
-    //                int nextVertex = GetDirectNeighbor(posX(currentVertex), posY(currentVertex), direction);
-
-    //                // Break if the next vertex is invalid or blocked
-    //                if (nextVertex < 0 || GetWall(posX(currentVertex), posY(currentVertex), direction))
-    //                {
-    //                    break;
-    //                }
-
-    //                // Add the valid vertex and continue
-    //                neighbors.Add(nextVertex);
-    //                currentVertex = nextVertex;
-
-    //                // Check perpendicular directions if not yet done
-    //                if (!traversedInDirection)
-    //                {
-    //                    foreach (Direction perpendicularDirection in perpendicularDirections)
-    //                    {
-    //                        int perpendicularNeighbor = GetDirectNeighbor(posX(currentVertex), posY(currentVertex), perpendicularDirection);
-
-    //                        if (perpendicularNeighbor >= 0 && !GetWall(posX(currentVertex), posY(currentVertex), perpendicularDirection))
-    //                        {
-    //                            // Add perpendicular neighbors if valid
-    //                            neighbors.Add(perpendicularNeighbor);
-    //                        }
-    //                    }
-    //                    traversedInDirection = true; // Ensure perpendicular directions are checked once
-    //                }
-    //            }
-    //        }
-    //    }
-    //    return neighbors;
-    //}
-
-    // Helper method to get perpendicular directions
-    private Direction[] GetPerpendicularDirections(Direction direction)
-    {
-        // Assuming 4 directions: NORTH, EAST, SOUTH, WEST
-        switch (direction)
-        {
-            case Direction.NORTH:
-                return new[] { Direction.WEST, Direction.EAST };
-            case Direction.EAST:
-                return new[] { Direction.NORTH, Direction.SOUTH };
-            case Direction.SOUTH:
-                return new[] { Direction.EAST, Direction.WEST };
-            case Direction.WEST:
-                return new[] { Direction.SOUTH, Direction.NORTH };
-            default:
-                return new Direction[0];
-        }
-    }
-
-
-
-    // Method to get all reachable vertices from a starting point using DFS
+    // DFS algorithm to find all relevant vertices
     public HashSet<int> GetAllVertices(int startVertex)
     {
         HashSet<int> visitedVertices = new HashSet<int>();
@@ -401,7 +284,7 @@ public class CustomGrid : MonoBehaviour
         // Add the current vertex to the visited set
         visitedVertices.Add(currentVertex);
 
-        // Get the neighbors of the current vertex using the provided GetNeighbors method
+        // Get the neighbors of the current vertex using the GetNeighbors method
         HashSet<int> neighbors = GetNeighbors(currentVertex);
 
         // Recursively call this method for each unvisited neighbor
@@ -420,46 +303,4 @@ public class CustomGrid : MonoBehaviour
     {
         return cell / width;
     }
-
-
-
-
-
-    //// Check neighbors for solvability (used in DFS/BFS)
-    //public List<Vector2Int> GetNeighbors(int x, int z)
-    //{
-    //    List<Vector2Int> neighbors = new List<Vector2Int>();
-
-    //    // Check left neighbor (x - 1, z)
-    //    if (x > 0 && !HasRightWall(x - 1, z)) // Check left neighbor's right wall
-    //    {
-    //        Debug.Log("Left");
-    //        neighbors.Add(new Vector2Int(x - 1, z));
-    //    }
-
-    //    // Check right neighbor (x + 1, z)
-    //    if (x < width - 1 && !HasRightWall(x, z)) // Check current cell's right wall
-    //    {
-    //        Debug.Log("Right");
-    //        neighbors.Add(new Vector2Int(x + 1, z));
-    //    }
-
-    //    // Check bottom neighbor (x, z - 1)
-    //    if (z > 0 && !HasBottomWall(x, z)) // Check current cell's bottom wall
-    //    {
-    //        Debug.Log("Bottom");
-    //        neighbors.Add(new Vector2Int(x, z - 1));
-    //    }
-
-    //    // Check top neighbor (x, z + 1)
-    //    if (z < height - 1 && !HasBottomWall(x, z)) // Check current cell's bottom wall
-    //    {
-    //        Debug.Log("Top");
-    //        neighbors.Add(new Vector2Int(x, z + 1));
-    //    }
-
-    //    return neighbors;
-    //}
-
-
 }
