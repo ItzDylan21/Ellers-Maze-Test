@@ -297,6 +297,64 @@ public class CustomGrid : MonoBehaviour
         }
     }
 
+    public HashSet<Vector2Int> GetAdjacentCells(int x, int z)
+    {
+        HashSet<Vector2Int> adjacentCells = new HashSet<Vector2Int>();
+        foreach (Direction direction in Enum.GetValues(typeof(Direction)))
+        {
+            int neighborX = x + DELTA_X[(int)direction];
+            int neighborZ = z + DELTA_Y[(int)direction];
+
+            if (neighborX >= 0 && neighborX < width && neighborZ >= 0 && neighborZ < height)
+            {
+                adjacentCells.Add(new Vector2Int(neighborX, neighborZ));
+            }
+        }
+        return adjacentCells;
+    }
+
+
+    public bool IsPositionInWall(Vector3 position)
+    {
+        // Convert world position to grid coordinates
+        int[] coords = GetXZ(position);
+        int x = coords[0];
+        int z = coords[1];
+
+        // Check boundaries to ensure coordinates are within the grid
+        if (x < 0 || x >= width || z < 0 || z >= height)
+        {
+            return false; // Outside grid boundaries; adjust as needed for your logic
+        }
+
+        // Determine if position is inside a wall
+        // Check for walls surrounding the cell
+        bool isInWall = false;
+
+        // Check north wall
+        if (z + 1 < height && northWalls[x, z + 1])
+        {
+            isInWall = true;
+        }
+        // Check east wall
+        else if (x + 1 < width && westWalls[x + 1, z])
+        {
+            isInWall = true;
+        }
+        // Check south wall
+        else if (z > 0 && northWalls[x, z])
+        {
+            isInWall = true;
+        }
+        // Check west wall
+        else if (x > 0 && westWalls[x, z])
+        {
+            isInWall = true;
+        }
+
+        return isInWall;
+    }
+
     public int posX(int cell)
     {
         return cell % width;

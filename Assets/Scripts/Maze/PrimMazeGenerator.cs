@@ -1,23 +1,32 @@
 using UnityEngine;
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using Unity.VisualScripting;
-using static UnityEngine.XR.Interaction.Toolkit.Inputs.Interactions.SectorInteraction;
-using UnityEngine.Rendering;
 using Unity.XR.CoreUtils;
+using UnityEngine.XR.Interaction.Toolkit.Interactables;
+using UnityEngine.XR.Interaction.Toolkit;
+using UnityEngine.UI;
 
 public class PrimMazeGenerator : MonoBehaviour
 {
     [SerializeField] GridSpawner gridSpawner;
     public GameObject wallPrefab;
+    public GameObject cubePrefab;
+    public GameObject winScreenPrefab;
     public XROrigin xrOrigin;
+    private GameObject spawnedCube;
     private List<GameObject> instantiatedWalls = new List<GameObject>();
+    private GameObject combinedObject;
     private CustomGrid gridXZ;
 
     [SerializeField] GameObject gridCellIndicator;
+    private GameObject startIndicator;
+    private GameObject endIndicator;
+    private GameObject winScreen;
 
     [SerializeField] int WallYValue;
+
+    private bool isCubeHeld = false;
+    private bool hasShownWinScreen = false;
     public enum Direction
     {
         NORTH, EAST, SOUTH, WEST
@@ -33,10 +42,161 @@ public class PrimMazeGenerator : MonoBehaviour
     {
         gridXZ = gridSpawner.grid;
         GenerateMaze();
+        SpawnInteractableCube();
     }
+
+    private void Update()
+    {
+        CheckEndNodeReached();
+    }
+
+    private void SpawnInteractableCube()
+    {
+        // Ensure startNode and endNode are valid
+        if (gridSpawner.startNode < 0 || gridSpawner.startNode >= gridXZ.GetNumberOfCells() ||
+            gridSpawner.endNode < 0 || gridSpawner.endNode >= gridXZ.GetNumberOfCells())
+        {
+            Debug.LogError("Start or end node is out of bounds.");
+            return;
+        }
+
+        // Get positions of the start node and end node
+        int startNodeX = gridXZ.posX(gridSpawner.startNode);
+        int startNodeZ = gridXZ.posY(gridSpawner.startNode);
+        int endNodeX = gridXZ.posX(gridSpawner.endNode);
+        int endNodeZ = gridXZ.posY(gridSpawner.endNode);
+
+        // Get adjacent cells to the end node
+        HashSet<Vector2Int> adjacentCells = gridXZ.GetAdjacentCells(endNodeX, endNodeZ);
+
+        // List of valid positions for the cube
+        List<Vector3> validPositions = new List<Vector3>();
+
+        // Check all cells and filter out those adjacent to the end node and the start node
+        for (int x = 0; x < gridSpawner.width; x++)
+        {
+            for (int z = 0; z < gridSpawner.height; z++)
+            {
+                // Skip if the cell is the start node or adjacent to the end node
+                if ((x == startNodeX && z == startNodeZ) || adjacentCells.Contains(new Vector2Int(x, z)))
+                {
+                    continue;
+                }
+
+                // Generate a random offset within the cell size
+                float offsetX = UnityEngine.Random.Range(-gridXZ.GetCellSize() / 2, gridXZ.GetCellSize() / 2);
+                float offsetZ = UnityEngine.Random.Range(-gridXZ.GetCellSize() / 2, gridXZ.GetCellSize() / 2);
+
+                Vector3 position = gridXZ.GetWorldPos(x, z) + new Vector3(gridXZ.GetCellSize() / 2 + offsetX, 0, gridXZ.GetCellSize() / 2 + offsetZ);
+
+                // Ensure the position is not within a wall
+                if (!gridXZ.IsPositionInWall(position))
+                {
+                    validPositions.Add(position);
+                }
+            }
+        }
+
+        if (validPositions.Count > 0)
+        {
+            // Choose a random valid position
+            Vector3 cubePosition = validPositions[randomizer.Next(validPositions.Count)];
+            spawnedCube = Instantiate(cubePrefab, cubePosition, Quaternion.identity);
+
+            // Add XRGrabInteractable component to make the cube interactable
+            XRGrabInteractable grabInteractable = spawnedCube.AddComponent<XRGrabInteractable>();
+            grabInteractable.selectEntered.AddListener(OnCubeGrabbed); // Listen for grab event
+            grabInteractable.selectExited.AddListener(OnCubeReleased); // Listen for release event
+        }
+        else
+        {
+            Debug.LogWarning("No valid positions found for spawning the cube.");
+        }
+    }
+
+
+    private void OnCubeGrabbed(SelectEnterEventArgs args)
+    {
+        isCubeHeld = true; // The cube has been grabbed
+        Debug.Log("Cube grabbed!");
+    }
+
+    private void OnCubeReleased(SelectExitEventArgs args)
+    {
+        isCubeHeld = false; // The cube has been released
+        Debug.Log("Cube released!");
+    }
+
+    private void DespawnCurrentObjects()
+    {
+        instantiatedWalls = new List<GameObject>();
+
+        if (combinedObject != null)
+        {
+            combinedObject = null;
+        }
+        if(gridXZ.)
+        if (startIndicator != null)
+        {
+            Destroy(startIndicator);
+            startIndicator = null;
+        }
+
+        if (endIndicator != null)
+        {
+            Destroy(endIndicator);
+            endIndicator = null;
+        }
+
+        if (spawnedCube != null)
+        {
+            Destroy(spawnedCube);
+            spawnedCube = null;
+        }
+
+        if (winScreen != null)
+        {
+            Destroy(winScreen);
+            hasShownWinScreen = false;
+            winScreen = null;
+        }
+    }
+
+    private void CheckEndNodeReached()
+    {
+        // Ensure the XR Origin reference is not null
+        if (xrOrigin == null)
+        {
+            Debug.LogError("XR Origin reference is missing!");
+            return;
+        }
+
+        // Get the world position of the end node
+        Vector3 endNodePosition = gridXZ.GetWorldPos(gridXZ.posX(gridSpawner.endNode), gridXZ.posY(gridSpawner.endNode))
+                                   + new Vector3(gridXZ.GetCellSize() / 2, 0, gridXZ.GetCellSize() / 2);
+
+        // Get the player's position from XR Origin
+        Vector3 playerPosition = xrOrigin.transform.position;
+
+        // Define a threshold radius for triggering the win condition
+        float triggerRadius = gridXZ.GetCellSize() / 2; // Adjust radius as needed
+
+        // Check if player is within the trigger radius and has the object
+        if (Vector3.Distance(playerPosition, endNodePosition) < triggerRadius && isCubeHeld)
+        {
+            ShowWinScreen();
+        }
+        else if (Vector3.Distance(playerPosition, endNodePosition) < triggerRadius && !isCubeHeld)
+        {
+            Debug.Log("You need to collect the object before finishing the maze!");
+        }
+    }
+
 
     public void GenerateMaze()
     {
+        DespawnCurrentObjects();
+
         InitializeWalls();
         GenerateRandomizedPrim();
         ConfigureEntryAndExit();
@@ -163,7 +323,7 @@ public class PrimMazeGenerator : MonoBehaviour
 
         // Position the start node indicator
         Vector3 startNodePosition = gridXZ.GetWorldPos(gridXZ.posX(gridSpawner.startNode), gridXZ.posY(gridSpawner.startNode));
-        GameObject startIndicator = Instantiate(gridCellIndicator, startNodePosition, Quaternion.identity);
+        startIndicator = Instantiate(gridCellIndicator, startNodePosition, Quaternion.identity);
 
         // Move position to center of the cell
         Vector3 cellCenterOffset = new Vector3(gridXZ.GetCellSize() / 2, 0, gridXZ.GetCellSize() / 2);
@@ -212,7 +372,7 @@ public class PrimMazeGenerator : MonoBehaviour
 
         // Position the end node indicator
         Vector3 endNodePosition = gridXZ.GetWorldPos(exitX, exitY);
-        GameObject endIndicator = Instantiate(gridCellIndicator, endNodePosition, Quaternion.identity);
+        endIndicator = Instantiate(gridCellIndicator, endNodePosition, Quaternion.identity);
 
         // Adjust the endNodePosition to the center of the cell
         endNodePosition += cellCenterOffset; // Move to center of the cell
@@ -236,6 +396,64 @@ public class PrimMazeGenerator : MonoBehaviour
         {
             Debug.LogError("Child object 'Plane' not found in endIndicator prefab!");
         }
+
+        // Set up a trigger on the end node to detect when the player steps on it
+        GameObject endTrigger = new GameObject("EndNodeTrigger");
+        BoxCollider triggerCollider = endTrigger.AddComponent<BoxCollider>();
+        triggerCollider.isTrigger = true;
+        endTrigger.transform.position = gridXZ.GetWorldPos(exitX, exitY);
+        endTrigger.AddComponent<EndNodeTrigger>().Initialize(this, xrOrigin);
+    }
+
+    public void OnPlayerSteppedOnEndNode()
+    {
+        if (isCubeHeld) // Check if the player is holding the cube
+        {
+            Debug.Log("Player has reached the end with the cube! You win!");
+            ShowWinScreen(); // Show win screen and button to proceed to the next maze
+        }
+        else
+        {
+            Debug.Log("Player reached the end, but no cube!");
+        }
+    }
+
+    private void ShowWinScreen()
+    {
+        if (hasShownWinScreen)
+        {
+            return; // Exit if the win screen has already been shown
+        }
+
+        // Get the position of the end node
+        Vector3 endNodePosition = gridXZ.GetWorldPos(gridXZ.posX(gridSpawner.endNode), gridXZ.posY(gridSpawner.endNode))
+                                   + new Vector3(gridXZ.GetCellSize() / 2, 0, gridXZ.GetCellSize() / 2);
+
+        // Set the height where the win screen should appear
+        float winScreenHeight = 2.0f; // Adjust this height as needed
+        endNodePosition.y += winScreenHeight;
+
+        // Instantiate the win screen at the end node
+        winScreen = Instantiate(winScreenPrefab, endNodePosition, Quaternion.identity);
+
+        // Find the button and add a listener to regenerate the maze
+        Button proceedButton = winScreen.GetComponentInChildren<Button>();
+        if (proceedButton != null)
+        {
+            proceedButton.onClick.AddListener(() =>
+            {
+                gridXZ = gridSpawner.grid;
+
+                GenerateMaze(); // Generate a new maze
+                SpawnInteractableCube(); // Spawn a new interactable cube
+            });
+        }
+        else
+        {
+            Debug.LogError("Button not found in win screen prefab!");
+        }
+
+        hasShownWinScreen = true; // Set the flag to true after showing the win screen
     }
 
 
@@ -277,7 +495,7 @@ public class PrimMazeGenerator : MonoBehaviour
             }
         }
 
-        GameObject combinedObject = new GameObject("CombinedWalls");
+        combinedObject = new GameObject("CombinedWalls");
         MeshFilter meshFilter = combinedObject.AddComponent<MeshFilter>();
         MeshRenderer meshRenderer = combinedObject.AddComponent<MeshRenderer>();
 
@@ -334,6 +552,37 @@ public class PrimMazeGenerator : MonoBehaviour
     }
 
     private void VertexText(HashSet<int> vertices, Color textColor, int yVal)
+    {
+        Debug.Log("Total vertices: " + vertices.Count);
+
+        GameObject gridTextObj = new GameObject("GridText");
+
+        foreach (var vertex in vertices)
+        {
+            int x = vertex % gridSpawner.width;
+            int y = vertex / gridSpawner.width;
+
+            string labelText = $"({x}, {y})";
+
+            GameObject text = new GameObject($"VertexText ({x}, {y})");
+            TextMesh mesh = text.AddComponent<TextMesh>();
+            mesh.text = labelText;
+            mesh.color = textColor;
+
+            // Calculate world position
+            Vector3 gridPos = gridXZ.GetWorldPos(x, y);
+            gridPos = new Vector3(gridPos.x + gridXZ.GetCellSize() / 2, yVal, gridPos.z + gridXZ.GetCellSize() / 2);
+
+            // Debug.Log($"Placing text at {gridPos} for vertex ({x}, {y})");
+
+            text.transform.position = gridPos;
+            text.transform.parent = gridTextObj.transform;
+
+            gridXZ.AddTextMesh(x, y, mesh);
+        }
+    }
+
+    private void EndOfMazeUI(HashSet<int> vertices, Color textColor, int yVal)
     {
         Debug.Log("Total vertices: " + vertices.Count);
 
