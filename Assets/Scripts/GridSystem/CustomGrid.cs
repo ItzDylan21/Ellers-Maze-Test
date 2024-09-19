@@ -196,80 +196,99 @@ public class CustomGrid : MonoBehaviour
     public HashSet<int> GetNeighbors(int fromVertex)
     {
         HashSet<int> neighbors = new HashSet<int>();
-        foreach (Direction direction in Enum.GetValues(typeof(CustomGrid.Direction)))
+        int x = posX(fromVertex);
+        int z = posY(fromVertex);
+
+        foreach (Direction direction in Enum.GetValues(typeof(Direction)))
         {
-            int nextNeighbor = GetDirectNeighbor(posX(fromVertex), posY(fromVertex), direction);
-            if (nextNeighbor < 0 || GetWall(posX(fromVertex), posY(fromVertex), direction))
+            int nextNeighbor = GetDirectNeighbor(x, z, direction);
+
+            if (nextNeighbor >= 0 && !GetWall(x, z, direction))
             {
-                continue;
+                neighbors.Add(nextNeighbor);
             }
-
-            int neighbor, numWalls;
-
-            do
-            {
-                neighbor = nextNeighbor;
-                numWalls = GetNumWalls(posX(neighbor), posY(neighbor));
-                nextNeighbor = GetDirectNeighbor(posX(neighbor), posY(neighbor), direction);
-            } while (nextNeighbor >= 0 &&    // we have a further neighbour
-                    !GetWall(posX(neighbor), posY(neighbor), direction) && // the passage continues
-                    numWalls == NUM_DIRECTIONS - 2    // there is no junction or dead-end
-            );
-
-            Direction turnedDirection;
-            if (numWalls == NUM_DIRECTIONS - 2)
-            {
-                // Try a perpendicular direction by shifting the enum ordinal
-                turnedDirection = (Direction)(((int)direction + 1) % NUM_DIRECTIONS);
-
-                // Check if a wall is blocking the turned direction
-                if (GetWall(posX(neighbor), posY(neighbor), turnedDirection))
-                {
-                    // If blocked, try the other perpendicular direction
-                    turnedDirection = (Direction)(((int)direction + NUM_DIRECTIONS - 1) % NUM_DIRECTIONS);
-                }
-
-                // Get the next neighbor in the turned direction
-                int nextNeighbour = GetDirectNeighbor(posX(neighbor), posY(neighbor), turnedDirection);
-
-                // While the next neighbour is valid and the passage continues without a junction or dead-end
-                while (nextNeighbor >= 0 &&
-                       !GetWall(posX(neighbor), posY(neighbor), turnedDirection) &&
-                       numWalls == NUM_DIRECTIONS - 2)
-                {
-                    do
-                    {
-                        // Pass through to the next neighbor along the turned direction
-                        neighbor = nextNeighbour;
-                        numWalls = GetNumWalls(posX(neighbor), posY(neighbor));
-                        nextNeighbour = GetDirectNeighbor(posX(neighbor), posY(neighbor), turnedDirection);
-                    }
-                    while (nextNeighbor >= 0 &&
-                           !GetWall(posX(neighbor), posY(neighbor), turnedDirection) &&
-                           numWalls == NUM_DIRECTIONS - 2);
-
-
-                    // Try again around a corner along the original direction
-                    nextNeighbour = GetDirectNeighbor(posX(neighbor), posY(neighbor), direction);
-
-                    while (nextNeighbor >= 0 &&
-                           !GetWall(posX(neighbor), posY(neighbor), direction) &&
-                           numWalls == NUM_DIRECTIONS - 2)
-                    {
-                        // Pass through to the next neighbor along the original direction
-                        neighbor = nextNeighbour;
-                        numWalls = GetNumWalls(posX(neighbor), posY(neighbor));
-                        nextNeighbour = GetDirectNeighbor(posX(neighbor), posY(neighbor), direction);
-                    }
-
-                    // Go back to the perpendicular direction and try again
-                    nextNeighbour = GetDirectNeighbor(posX(neighbor), posY(neighbor), turnedDirection);
-                }
-            }
-            neighbors.Add(neighbor);
         }
+
         return neighbors;
     }
+
+    //public HashSet<int> GetNeighbors(int fromVertex)
+    //{
+    //    HashSet<int> neighbors = new HashSet<int>();
+    //    foreach (Direction direction in Enum.GetValues(typeof(CustomGrid.Direction)))
+    //    {
+    //        int nextNeighbor = GetDirectNeighbor(posX(fromVertex), posY(fromVertex), direction);
+    //        if (nextNeighbor < 0 || GetWall(posX(fromVertex), posY(fromVertex), direction))
+    //        {
+    //            continue;
+    //        }
+
+    //        int neighbor, numWalls;
+
+    //        do
+    //        {
+    //            neighbor = nextNeighbor;
+    //            numWalls = GetNumWalls(posX(neighbor), posY(neighbor));
+    //            nextNeighbor = GetDirectNeighbor(posX(neighbor), posY(neighbor), direction);
+    //        } while (nextNeighbor >= 0 &&    // we have a further neighbour
+    //                !GetWall(posX(neighbor), posY(neighbor), direction) && // the passage continues
+    //                numWalls == NUM_DIRECTIONS - 2    // there is no junction or dead-end
+    //        );
+
+    //        Direction turnedDirection;
+    //        if (numWalls == NUM_DIRECTIONS - 2)
+    //        {
+    //            // Try a perpendicular direction by shifting the enum ordinal
+    //            turnedDirection = (Direction)(((int)direction + 1) % NUM_DIRECTIONS);
+
+    //            // Check if a wall is blocking the turned direction
+    //            if (GetWall(posX(neighbor), posY(neighbor), turnedDirection))
+    //            {
+    //                // If blocked, try the other perpendicular direction
+    //                turnedDirection = (Direction)(((int)direction + NUM_DIRECTIONS - 1) % NUM_DIRECTIONS);
+    //            }
+
+    //            // Get the next neighbor in the turned direction
+    //            int nextNeighbour = GetDirectNeighbor(posX(neighbor), posY(neighbor), turnedDirection);
+
+    //            // While the next neighbour is valid and the passage continues without a junction or dead-end
+    //            while (nextNeighbor >= 0 &&
+    //                   !GetWall(posX(neighbor), posY(neighbor), turnedDirection) &&
+    //                   numWalls == NUM_DIRECTIONS - 2)
+    //            {
+    //                do
+    //                {
+    //                    // Pass through to the next neighbor along the turned direction
+    //                    neighbor = nextNeighbour;
+    //                    numWalls = GetNumWalls(posX(neighbor), posY(neighbor));
+    //                    nextNeighbour = GetDirectNeighbor(posX(neighbor), posY(neighbor), turnedDirection);
+    //                }
+    //                while (nextNeighbor >= 0 &&
+    //                       !GetWall(posX(neighbor), posY(neighbor), turnedDirection) &&
+    //                       numWalls == NUM_DIRECTIONS - 2);
+
+
+    //                // Try again around a corner along the original direction
+    //                nextNeighbour = GetDirectNeighbor(posX(neighbor), posY(neighbor), direction);
+
+    //                while (nextNeighbor >= 0 &&
+    //                       !GetWall(posX(neighbor), posY(neighbor), direction) &&
+    //                       numWalls == NUM_DIRECTIONS - 2)
+    //                {
+    //                    // Pass through to the next neighbor along the original direction
+    //                    neighbor = nextNeighbour;
+    //                    numWalls = GetNumWalls(posX(neighbor), posY(neighbor));
+    //                    nextNeighbour = GetDirectNeighbor(posX(neighbor), posY(neighbor), direction);
+    //                }
+
+    //                // Go back to the perpendicular direction and try again
+    //                nextNeighbour = GetDirectNeighbor(posX(neighbor), posY(neighbor), turnedDirection);
+    //            }
+    //        }
+    //        neighbors.Add(neighbor);
+    //    }
+    //    return neighbors;
+    //}
 
     // DFS algorithm to find all relevant vertices
     public HashSet<int> GetAllVertices(int startVertex)

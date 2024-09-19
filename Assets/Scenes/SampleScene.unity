@@ -637,8 +637,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d6162b81564ecc548b9aadce38a7a4ef, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  width: 5
-  height: 5
+  width: 20
+  height: 20
   startNode: 0
   endNode: 0
   startNodeMaterial: {fileID: 2100000, guid: 8315ef42d3d615e4e891d89ef0bf8fb8, type: 2}
@@ -1665,6 +1665,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3390021584163160371, guid: 046a952d660ba7e4dacce77287a76272, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: b65d047c085c82e49a80844538c16cd7, type: 2}
     - target: {fileID: 6520263763546251146, guid: 046a952d660ba7e4dacce77287a76272, type: 3}
       propertyPath: m_Name
       value: Key
@@ -1685,6 +1689,10 @@ PrefabInstance:
     - target: {fileID: 8429981633443581377, guid: 6c8af5c8012f01440af6cb2bc3eb987c, type: 3}
       propertyPath: m_Name
       value: TunnelingVignette
+      objectReference: {fileID: 0}
+    - target: {fileID: 8429981633443581377, guid: 6c8af5c8012f01440af6cb2bc3eb987c, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8429981633443581382, guid: 6c8af5c8012f01440af6cb2bc3eb987c, type: 3}
       propertyPath: m_RootOrder

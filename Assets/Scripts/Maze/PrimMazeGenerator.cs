@@ -5,6 +5,7 @@ using Unity.XR.CoreUtils;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
 using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.UI;
+using UnityEditor.Experimental.GraphView;
 
 public class PrimMazeGenerator : MonoBehaviour
 {
@@ -176,6 +177,7 @@ public class PrimMazeGenerator : MonoBehaviour
 
         if (combinedObject != null)
         {
+            Destroy(combinedObject);
             combinedObject = null;
         }
         if (startIndicator != null)
@@ -240,12 +242,84 @@ public class PrimMazeGenerator : MonoBehaviour
         DespawnCurrentObjects();
 
         InitializeWalls();
+
         GenerateRandomizedPrim();
+
         ConfigureEntryAndExit();
-        RemoveRandomWalls(3 * gridSpawner.width);
+
+        RemoveRandomWalls(5 * gridSpawner.width);
+
         VertexText(gridXZ.GetAllVertices(gridSpawner.startNode), Color.yellow, 1);
+
+        // Try finding a path
+        if (FindAndDisplayPath())
+        {
+            Debug.Log("Path found and displayed successfully.");
+        }
+        else
+        {
+            // Retry pathfinding with additional wall removal
+            int retryCount = 0;
+            bool pathFound = false;
+            while (retryCount < 10 && !pathFound)
+            {
+                // Remove a smaller number of random walls to increase the chance of finding a path
+                RemoveRandomWalls(gridSpawner.width * 3);
+
+                VertexText(gridXZ.GetAllVertices(gridSpawner.startNode), Color.yellow, 1);
+
+                pathFound = FindAndDisplayPath();
+                retryCount++;
+            }
+
+            if (!pathFound)
+            {
+                GenerateMaze();
+            }
+        }
+
         BuildMazeInUnity();
     }
+
+    private void UpdatePathAndVisitedTexts(GPath path)
+    {
+        // Update text colors for visited vertices
+        foreach (var vertex in path.Visited)
+        {
+            Vector2Int coords = new Vector2Int(gridXZ.posX(vertex), gridXZ.posY(vertex));
+            gridXZ.UpdateTextColor(coords, Color.cyan);
+        }
+
+        // Update text colors for path vertices
+        foreach (var vertex in path.Vertices)
+        {
+            Vector2Int coords = new Vector2Int(gridXZ.posX(vertex), gridXZ.posY(vertex));
+            gridXZ.UpdateTextColor(coords, Color.red);
+        }
+
+        // Color end node vertex red
+        Vector2Int endCoords = new Vector2Int(gridXZ.posX(gridSpawner.endNode), gridXZ.posY(gridSpawner.endNode));
+        gridXZ.UpdateTextColor(endCoords, Color.red);
+    }
+
+    private bool FindAndDisplayPath()
+    {
+        GPath path = BreadthFirstSearch(gridSpawner.startNode, gridSpawner.endNode);
+        if (path != null)
+        {
+            Debug.Log("Path found!");
+
+            UpdatePathAndVisitedTexts(path);
+
+            return true;
+        }
+        else
+        {
+            Debug.Log("No path found.");
+            return false;
+        }
+    }
+
 
     private void InitializeWalls()
     {
@@ -600,7 +674,20 @@ public class PrimMazeGenerator : MonoBehaviour
     {
         Debug.Log("Total vertices: " + vertices.Count);
 
-        GameObject gridTextObj = new GameObject("GridText");
+        // Check if we already have a GridText object
+        GameObject gridTextObj = GameObject.Find("GridText");
+        if (gridTextObj == null)
+        {
+            gridTextObj = new GameObject("GridText");
+        }
+        else
+        {
+            // Clear old text objects if they exist
+            foreach (Transform child in gridTextObj.transform)
+            {
+                GameObject.Destroy(child.gameObject);
+            }
+        }
 
         foreach (var vertex in vertices)
         {
@@ -626,6 +713,7 @@ public class PrimMazeGenerator : MonoBehaviour
             gridXZ.AddTextMesh(x, y, mesh);
         }
     }
+
 
     private void EndOfMazeUI(HashSet<int> vertices, Color textColor, int yVal)
     {
@@ -769,5 +857,85 @@ public class PrimMazeGenerator : MonoBehaviour
             numWalls += (z > 0 && gridXZ.GetWall(x - 1, z - 1, CustomGrid.Direction.EAST)) ? 1 : 0;          // check up
         }
         return numWalls;
-    } 
+    }
+
+    private CustomGrid.Direction GetDirection(int fromX, int fromY, int toX, int toY)
+    {
+        if (fromX == toX)
+        {
+            return fromY < toY ? CustomGrid.Direction.NORTH : CustomGrid.Direction.SOUTH;
+        }
+        else
+        {
+            return fromX < toX ? CustomGrid.Direction.EAST : CustomGrid.Direction.WEST;
+        }
+    }
+
+    private bool IsWallBetween(int fromVertex, int toVertex)
+    {
+        int fromX = gridXZ.posX(fromVertex);
+        int fromY = gridXZ.posY(fromVertex);
+        int toX = gridXZ.posX(toVertex);
+        int toY = gridXZ.posY(toVertex);
+
+        // Determine the direction of movement
+        CustomGrid.Direction direction = GetDirection(fromX, fromY, toX, toY);
+
+        // Check if there is a wall in the direction of movement
+        return gridXZ.GetWall(fromX, fromY, direction);
+    }
+
+    // BFS Pathfinding Method
+    public GPath BreadthFirstSearch(int startVertex, int targetVertex)
+    {
+        if (startVertex == -1 || targetVertex == -1) return null;
+
+        GPath path = new GPath();
+        path.Vertices.Add(startVertex);
+        path.Visited.Add(startVertex);
+
+        if (targetVertex == startVertex) return path;
+
+        Queue<int> fifoQueue = new Queue<int>();
+        Dictionary<int, int> visitedFrom = new Dictionary<int, int>();
+
+        fifoQueue.Enqueue(startVertex);
+        visitedFrom[startVertex] = -1;
+
+        while (fifoQueue.Count > 0)
+        {
+            int current = fifoQueue.Dequeue();
+
+            foreach (var neighbor in gridXZ.GetNeighbors(current))
+            {
+                path.Visited.Add(neighbor);
+
+                if (neighbor == targetVertex)
+                {
+                    int trace = current;
+                    while (trace != -1)
+                    {
+                        path.Vertices.Add(trace);
+                        trace = visitedFrom[trace];
+                    }
+                    path.Vertices.Reverse();
+                    return path;
+                }
+                else if (!visitedFrom.ContainsKey(neighbor))
+                {
+                    visitedFrom[neighbor] = current;
+                    fifoQueue.Enqueue(neighbor);
+                }
+            }
+        }
+        return null;
+    }
+
+}
+
+// Helper class to represent path and visited vertices
+public class GPath
+{
+    public List<int> Vertices { get; set; } = new List<int>();
+    public HashSet<int> Visited { get; set; } = new HashSet<int>();
 }
