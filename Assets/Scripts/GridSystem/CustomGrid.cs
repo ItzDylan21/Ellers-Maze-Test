@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class CustomGrid : MonoBehaviour
 {
@@ -20,6 +21,10 @@ public class CustomGrid : MonoBehaviour
     public bool[,] northWalls;
     public bool[,] westWalls;
     private Dictionary<Vector2Int, TextMesh> textMeshes = new Dictionary<Vector2Int, TextMesh>();
+
+    private bool hasShownWinScreen;
+    [SerializeField] GameObject winScreenPrefab;
+    private GameObject winScreen;
 
     // Direction enum to represent movement directions
     public enum Direction

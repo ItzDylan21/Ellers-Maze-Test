@@ -651,7 +651,7 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 1178791450436251564, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
   m_PrefabInstance: {fileID: 9014170783777442263}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 1969684052}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e0cb9aa70a22847b5925ee5f067c10a9, type: 3}
@@ -988,11 +988,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4015128326712939851, guid: 333b9bb0e10ac2648b093d5e934a6b47, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 294.1
+      value: 394.1
       objectReference: {fileID: 0}
     - target: {fileID: 4015128326712939851, guid: 333b9bb0e10ac2648b093d5e934a6b47, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 177.5
+      value: 277.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4015128326712939851, guid: 333b9bb0e10ac2648b093d5e934a6b47, type: 3}
+      propertyPath: m_LocalScale.x
+      value: -0.002
       objectReference: {fileID: 0}
     - target: {fileID: 4015128326712939851, guid: 333b9bb0e10ac2648b093d5e934a6b47, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1115,6 +1119,14 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4422659091188657070, guid: 333b9bb0e10ac2648b093d5e934a6b47, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 394.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4422659091188657070, guid: 333b9bb0e10ac2648b093d5e934a6b47, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 277.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4422659091188657070, guid: 333b9bb0e10ac2648b093d5e934a6b47, type: 3}
       propertyPath: m_AnchoredPosition.x
       value: 0
       objectReference: {fileID: 0}
@@ -1137,6 +1149,10 @@ PrefabInstance:
     - target: {fileID: 4588051828473420344, guid: 333b9bb0e10ac2648b093d5e934a6b47, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4736824462062461832, guid: 333b9bb0e10ac2648b093d5e934a6b47, type: 3}
+      propertyPath: m_Text
+      value: Afgerond!
       objectReference: {fileID: 0}
     - target: {fileID: 5684358024879033404, guid: 333b9bb0e10ac2648b093d5e934a6b47, type: 3}
       propertyPath: m_AnchorMax.y
@@ -1218,6 +1234,10 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.x
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7915967369019904793, guid: 333b9bb0e10ac2648b093d5e934a6b47, type: 3}
+      propertyPath: m_Text
+      value: Nieuw doolhof maken?
+      objectReference: {fileID: 0}
     - target: {fileID: 8180815008627773159, guid: 333b9bb0e10ac2648b093d5e934a6b47, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -1281,6 +1301,10 @@ PrefabInstance:
     - target: {fileID: 8607500784391115102, guid: 333b9bb0e10ac2648b093d5e934a6b47, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8908833148325884413, guid: 333b9bb0e10ac2648b093d5e934a6b47, type: 3}
+      propertyPath: m_Text
+      value: Ga naar nieuw doolhof?
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:
@@ -1472,6 +1496,23 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 1767192433, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
   m_PrefabInstance: {fileID: 9014170783777442263}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1969684052 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1717954561962503725, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
+  m_PrefabInstance: {fileID: 9014170783777442263}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1969684058
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1969684052}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2148cd46057b01b4ab06a24747a493b7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &369742138495358991
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2098,6 +2139,10 @@ PrefabInstance:
       propertyPath: m_LocalPosition.y
       value: 4.7
       objectReference: {fileID: 0}
+    - target: {fileID: 153982007679157697, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
+      propertyPath: m_MoveSpeed
+      value: 7
+      objectReference: {fileID: 0}
     - target: {fileID: 1717954561962503725, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
       propertyPath: m_Name
       value: XR Origin (XR Rig)
@@ -2146,13 +2191,17 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5033801203051696737, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5944131804917401860, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6501755809687671949, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2161,6 +2210,9 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 1914875404}
     m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1717954561962503725, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1969684058}
     - targetCorrespondingSourceObject: {fileID: 1767192433, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
       insertIndex: -1
       addedObject: {fileID: 173505006}

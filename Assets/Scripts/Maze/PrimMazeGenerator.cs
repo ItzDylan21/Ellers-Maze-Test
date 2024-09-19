@@ -66,28 +66,33 @@ public class PrimMazeGenerator : MonoBehaviour
         int endNodeX = gridXZ.posX(gridSpawner.endNode);
         int endNodeZ = gridXZ.posY(gridSpawner.endNode);
 
-        // Get adjacent cells to the end node
-        HashSet<Vector2Int> adjacentCells = gridXZ.GetAdjacentCells(endNodeX, endNodeZ);
+        // Get adjacent cells to the end node and start node
+        HashSet<Vector2Int> adjacentToEndCells = new HashSet<Vector2Int>(gridXZ.GetAdjacentCells(endNodeX, endNodeZ));
+        HashSet<Vector2Int> adjacentToStartCells = new HashSet<Vector2Int>(gridXZ.GetAdjacentCells(startNodeX, startNodeZ));
 
         // List of valid positions for the cube
         List<Vector3> validPositions = new List<Vector3>();
 
-        // Check all cells and filter out those adjacent to the end node and the start node
+        // Check all cells and filter out those adjacent to the start node or end node
         for (int x = 0; x < gridSpawner.width; x++)
         {
             for (int z = 0; z < gridSpawner.height; z++)
             {
-                // Skip if the cell is the start node or adjacent to the end node
-                if ((x == startNodeX && z == startNodeZ) || adjacentCells.Contains(new Vector2Int(x, z)))
+                // Skip if the cell is the start node or end node, or adjacent to either node
+                if ((x == startNodeX && z == startNodeZ) ||
+                    (x == endNodeX && z == endNodeZ) ||
+                    adjacentToStartCells.Contains(new Vector2Int(x, z)) ||
+                    adjacentToEndCells.Contains(new Vector2Int(x, z)))
                 {
                     continue;
                 }
 
-                // Generate a random offset within the cell size
-                float offsetX = UnityEngine.Random.Range(-gridXZ.GetCellSize() / 2, gridXZ.GetCellSize() / 2);
-                float offsetZ = UnityEngine.Random.Range(-gridXZ.GetCellSize() / 2, gridXZ.GetCellSize() / 2);
+                // Generate a random offset within 75% of the cell size
+                float cellSize = gridXZ.GetCellSize();
+                float offsetX = UnityEngine.Random.Range(-0.75f * cellSize / 2, 0.75f * cellSize / 2);
+                float offsetZ = UnityEngine.Random.Range(-0.75f * cellSize / 2, 0.75f * cellSize / 2);
 
-                Vector3 position = gridXZ.GetWorldPos(x, z) + new Vector3(gridXZ.GetCellSize() / 2 + offsetX, 0, gridXZ.GetCellSize() / 2 + offsetZ);
+                Vector3 position = gridXZ.GetWorldPos(x, z) + new Vector3(cellSize / 2 + offsetX, 0, cellSize / 2 + offsetZ);
 
                 // Ensure the position is not within a wall
                 if (!gridXZ.IsPositionInWall(position))
@@ -97,11 +102,48 @@ public class PrimMazeGenerator : MonoBehaviour
             }
         }
 
+        // If no valid positions, include cells adjacent to the end node, but still exclude start node's adjacent cells
+        if (validPositions.Count == 0)
+        {
+            foreach (Vector2Int adjacentCell in adjacentToEndCells)
+            {
+                // Skip if the adjacent cell is the start node or adjacent to the start node
+                if ((adjacentCell.x == startNodeX && adjacentCell.y == startNodeZ) || adjacentToStartCells.Contains(adjacentCell))
+                {
+                    continue;
+                }
+
+                float cellSize = gridXZ.GetCellSize();
+                Vector3 position = gridXZ.GetWorldPos(adjacentCell.x, adjacentCell.y) + new Vector3(cellSize / 2, 0, cellSize / 2);
+
+                if (!gridXZ.IsPositionInWall(position))
+                {
+                    validPositions.Add(position);
+                }
+            }
+        }
+
+        // If still no valid positions, fallback to the end node or start node
+        if (validPositions.Count == 0)
+        {
+            Vector3 startNodePosition = gridXZ.GetWorldPos(startNodeX, startNodeZ) + new Vector3(gridXZ.GetCellSize() / 2, 0, gridXZ.GetCellSize() / 2);
+            if (!gridXZ.IsPositionInWall(startNodePosition) && !adjacentToStartCells.Contains(new Vector2Int(startNodeX, startNodeZ)))
+            {
+                validPositions.Add(startNodePosition);
+            }
+
+            Vector3 endNodePosition = gridXZ.GetWorldPos(endNodeX, endNodeZ) + new Vector3(gridXZ.GetCellSize() / 2, 0, gridXZ.GetCellSize() / 2);
+            if (!gridXZ.IsPositionInWall(endNodePosition) && !adjacentToEndCells.Contains(new Vector2Int(endNodeX, endNodeZ)))
+            {
+                validPositions.Add(endNodePosition);
+            }
+        }
+
+        // If we have valid positions, instantiate the cube at a random valid position
         if (validPositions.Count > 0)
         {
-            // Choose a random valid position
-            Vector3 cubePosition = validPositions[randomizer.Next(validPositions.Count)];
-            spawnedCube = Instantiate(cubePrefab, cubePosition, Quaternion.identity);
+            Vector3 spawnPosition = validPositions[UnityEngine.Random.Range(0, validPositions.Count)];
+            spawnedCube = Instantiate(cubePrefab, spawnPosition, Quaternion.identity);
 
             // Add XRGrabInteractable component to make the cube interactable
             XRGrabInteractable grabInteractable = spawnedCube.AddComponent<XRGrabInteractable>();
@@ -110,9 +152,10 @@ public class PrimMazeGenerator : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("No valid positions found for spawning the cube.");
+            Debug.LogWarning("No valid positions available for cube spawning.");
         }
     }
+
 
 
     private void OnCubeGrabbed(SelectEnterEventArgs args)
@@ -434,6 +477,9 @@ public class PrimMazeGenerator : MonoBehaviour
 
         // Instantiate the win screen at the end node
         winScreen = Instantiate(winScreenPrefab, endNodePosition, Quaternion.identity);
+
+        winScreen.transform.rotation = Quaternion.Euler(0, 180, 0);
+        winScreen.AddComponent<LookAtPlayer>().playerCamera = xrOrigin.Camera.transform;
 
         // Find the button and add a listener to regenerate the maze
         Button proceedButton = winScreen.GetComponentInChildren<Button>();
