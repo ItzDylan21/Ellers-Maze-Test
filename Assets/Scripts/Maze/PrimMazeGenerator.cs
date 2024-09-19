@@ -135,7 +135,6 @@ public class PrimMazeGenerator : MonoBehaviour
         {
             combinedObject = null;
         }
-        if(gridXZ.)
         if (startIndicator != null)
         {
             Destroy(startIndicator);
