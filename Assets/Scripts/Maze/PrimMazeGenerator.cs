@@ -5,11 +5,13 @@ using System.Runtime.CompilerServices;
 using Unity.VisualScripting;
 using static UnityEngine.XR.Interaction.Toolkit.Inputs.Interactions.SectorInteraction;
 using UnityEngine.Rendering;
+using Unity.XR.CoreUtils;
 
 public class PrimMazeGenerator : MonoBehaviour
 {
     [SerializeField] GridSpawner gridSpawner;
     public GameObject wallPrefab;
+    public XROrigin xrOrigin;
     private List<GameObject> instantiatedWalls = new List<GameObject>();
     private CustomGrid gridXZ;
 
@@ -163,6 +165,10 @@ public class PrimMazeGenerator : MonoBehaviour
         Vector3 startNodePosition = gridXZ.GetWorldPos(gridXZ.posX(gridSpawner.startNode), gridXZ.posY(gridSpawner.startNode));
         GameObject startIndicator = Instantiate(gridCellIndicator, startNodePosition, Quaternion.identity);
 
+        // Move position to center of the cell
+        Vector3 cellCenterOffset = new Vector3(gridXZ.GetCellSize() / 2, 0, gridXZ.GetCellSize() / 2);
+        startNodePosition += cellCenterOffset; 
+
         // Find the child object that has the MeshRenderer (if the plane is nested)
         Transform startPlane = startIndicator.transform.Find("Plane"); // Assuming the plane's name is "Plane"
         if (startPlane != null)
@@ -183,6 +189,18 @@ public class PrimMazeGenerator : MonoBehaviour
             Debug.LogError("Child object 'Plane' not found in startIndicator prefab!");
         }
 
+        // Set the player's spawn point to the center of the start node
+        if (xrOrigin != null)
+        {
+            Vector3 playerSpawnPosition = new Vector3(startNodePosition.x, xrOrigin.transform.position.y, startNodePosition.z); // Adjust Y to maintain current height
+            xrOrigin.transform.position = playerSpawnPosition;
+            Debug.Log($"Player spawn point set to center of start node at {playerSpawnPosition}");
+        }
+        else
+        {
+            Debug.LogError("XR Origin (player) reference is missing!");
+        }
+
         // Set the end node
         bool choice = randomizer.Next(0, 2) == 1;
         CustomGrid.Direction exitDirection = choice ? CustomGrid.Direction.NORTH : CustomGrid.Direction.WEST;
@@ -195,6 +213,9 @@ public class PrimMazeGenerator : MonoBehaviour
         // Position the end node indicator
         Vector3 endNodePosition = gridXZ.GetWorldPos(exitX, exitY);
         GameObject endIndicator = Instantiate(gridCellIndicator, endNodePosition, Quaternion.identity);
+
+        // Adjust the endNodePosition to the center of the cell
+        endNodePosition += cellCenterOffset; // Move to center of the cell
 
         // Find the child object that has the MeshRenderer (if the plane is nested)
         Transform endPlane = endIndicator.transform.Find("Plane"); // Assuming the plane's name is "Plane"
