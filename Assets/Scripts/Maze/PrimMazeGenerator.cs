@@ -6,6 +6,7 @@ using UnityEngine.XR.Interaction.Toolkit.Interactables;
 using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.UI;
 using UnityEditor.Experimental.GraphView;
+using UnityEngine.XR.Interaction.Toolkit.Interactors;
 
 public class PrimMazeGenerator : MonoBehaviour
 {
@@ -144,18 +145,58 @@ public class PrimMazeGenerator : MonoBehaviour
         if (validPositions.Count > 0)
         {
             Vector3 spawnPosition = validPositions[UnityEngine.Random.Range(0, validPositions.Count)];
+            spawnPosition.y += 1.0f; // Raise the cube in the air
+
+            // Instantiate the cube with the Y-axis tilt applied (keeping the X and Z axes neutral)
             spawnedCube = Instantiate(cubePrefab, spawnPosition, Quaternion.identity);
+            Rigidbody rb = spawnedCube.AddComponent<Rigidbody>();
+            rb.useGravity = false; // Disable gravity initially so the cube is suspended in the air
 
             // Add XRGrabInteractable component to make the cube interactable
             XRGrabInteractable grabInteractable = spawnedCube.AddComponent<XRGrabInteractable>();
             grabInteractable.selectEntered.AddListener(OnCubeGrabbed); // Listen for grab event
             grabInteractable.selectExited.AddListener(OnCubeReleased); // Listen for release event
+
+            // Add a script to rotate the cube
+            RotatingCube rotatingScript = spawnedCube.AddComponent<RotatingCube>();
+
+            // Add and configure the particle system for a metallic effect
+            ParticleSystem particleSystem = spawnedCube.AddComponent<ParticleSystem>();
+            ParticleSystem.MainModule mainModule = particleSystem.main;
+            mainModule.startColor = new ParticleSystem.MinMaxGradient(Color.gray); // Metallic color
+            mainModule.startSize = 0.1f;
+            mainModule.startSpeed = 1f;
+            mainModule.maxParticles = 100;
+
+            ParticleSystem.EmissionModule emissionModule = particleSystem.emission;
+            emissionModule.rateOverTime = 50; // Emit 50 particles per second
+
+            ParticleSystem.ShapeModule shapeModule = particleSystem.shape;
+            shapeModule.shapeType = ParticleSystemShapeType.Sphere;
+            shapeModule.radius = 0.5f;
+
+            // Store references for control during grab/release
+            grabInteractable.selectEntered.AddListener((SelectEnterEventArgs args) =>
+            {
+                rotatingScript.enabled = false; // Stop rotation
+                particleSystem.Pause();         // Pause particle emission
+            });
+
+            grabInteractable.selectExited.AddListener((SelectExitEventArgs args) =>
+            {
+                //rotatingScript.enabled = true;  // Resume rotation
+                particleSystem.Play();          // Resume particle emission
+
+                rb.useGravity = true;
+            });
         }
         else
         {
             Debug.LogWarning("No valid positions available for cube spawning.");
         }
     }
+
+
 
 
 
@@ -247,7 +288,7 @@ public class PrimMazeGenerator : MonoBehaviour
 
         ConfigureEntryAndExit();
 
-        RemoveRandomWalls(5 * gridSpawner.width);
+        RemoveRandomWalls(gridSpawner.width);
 
         VertexText(gridXZ.GetAllVertices(gridSpawner.startNode), Color.yellow, 1);
 

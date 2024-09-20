@@ -65,8 +65,8 @@ public class CustomGrid : MonoBehaviour
         {
             for (int z = 0; z < gridArray.GetLength(1); z++)
             {
-                Debug.DrawLine(GetWorldPos(x, z), GetWorldPos(x + 1, z), Color.white, 1000f);
-                Debug.DrawLine(GetWorldPos(x, z), GetWorldPos(x, z + 1), Color.white, 1000f);
+                //Debug.DrawLine(GetWorldPos(x, z), GetWorldPos(x + 1, z), Color.white, 1000f);
+                //Debug.DrawLine(GetWorldPos(x, z), GetWorldPos(x, z + 1), Color.white, 1000f);
             }
         }
     }
