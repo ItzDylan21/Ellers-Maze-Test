@@ -7,6 +7,7 @@ using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.UI;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine.XR.Interaction.Toolkit.Interactors;
+using Unity.VisualScripting;
 
 public class PrimMazeGenerator : MonoBehaviour
 {
@@ -147,45 +148,78 @@ public class PrimMazeGenerator : MonoBehaviour
             Vector3 spawnPosition = validPositions[UnityEngine.Random.Range(0, validPositions.Count)];
             spawnPosition.y += 1.0f; // Raise the cube in the air
 
-            // Instantiate the cube with the Y-axis tilt applied (keeping the X and Z axes neutral)
+            // Instantiate the cube
             spawnedCube = Instantiate(cubePrefab, spawnPosition, Quaternion.identity);
             Rigidbody rb = spawnedCube.AddComponent<Rigidbody>();
-            rb.useGravity = false; // Disable gravity initially so the cube is suspended in the air
+            rb.collisionDetectionMode = CollisionDetectionMode.Continuous; // Prevent tunneling
+            rb.useGravity = false; // Disable gravity initially
 
-            // Add XRGrabInteractable component to make the cube interactable
+            // Add XRGrabInteractable component
             XRGrabInteractable grabInteractable = spawnedCube.AddComponent<XRGrabInteractable>();
-            grabInteractable.selectEntered.AddListener(OnCubeGrabbed); // Listen for grab event
-            grabInteractable.selectExited.AddListener(OnCubeReleased); // Listen for release event
+            grabInteractable.selectEntered.AddListener(OnCubeGrabbed);
+            grabInteractable.selectExited.AddListener(OnCubeReleased);
 
-            // Add a script to rotate the cube
+            Transform attachPoint = spawnedCube.transform.Find("Torus"); // Change "AttachPoint" to your child object name
+            if (attachPoint != null)
+            {
+                grabInteractable.attachTransform = attachPoint; // Set the attach point
+            }
+
+            grabInteractable.movementType = XRBaseInteractable.MovementType.Instantaneous; // Set to snap
+            grabInteractable.throwOnDetach = false;
+
             RotatingCube rotatingScript = spawnedCube.AddComponent<RotatingCube>();
 
-            // Add and configure the particle system for a metallic effect
             ParticleSystem particleSystem = spawnedCube.AddComponent<ParticleSystem>();
+            
+            particleSystem.gameObject.layer = LayerMask.NameToLayer("Default");
             ParticleSystem.MainModule mainModule = particleSystem.main;
-            mainModule.startColor = new ParticleSystem.MinMaxGradient(Color.gray); // Metallic color
-            mainModule.startSize = 0.1f;
+            mainModule.startSize = 0.04f;
             mainModule.startSpeed = 1f;
-            mainModule.maxParticles = 100;
+            mainModule.maxParticles = 60;
 
             ParticleSystem.EmissionModule emissionModule = particleSystem.emission;
-            emissionModule.rateOverTime = 50; // Emit 50 particles per second
+            emissionModule.rateOverTime = 30;
 
             ParticleSystem.ShapeModule shapeModule = particleSystem.shape;
             shapeModule.shapeType = ParticleSystemShapeType.Sphere;
-            shapeModule.radius = 0.5f;
+            shapeModule.radius = 1.5f;
+
+            Renderer particleRenderer = particleSystem.GetComponent<Renderer>();
+            particleRenderer.material = new Material(Shader.Find("Particles/Standard Unlit"));
+
+            mainModule.startLifetime = 4f; 
+            mainModule.startSpeed = 0.5f;  
+
+            // Add gradual fade-out to particles
+            ParticleSystem.ColorOverLifetimeModule colorModule = particleSystem.colorOverLifetime;
+            colorModule.enabled = true;
+            Gradient gradient = new Gradient();
+            gradient.SetKeys(
+                new GradientColorKey[] { new GradientColorKey(Color.yellow, 0.0f), new GradientColorKey(Color.clear, 1.0f) },
+                new GradientAlphaKey[] { new GradientAlphaKey(1.0f, 0.0f), new GradientAlphaKey(0.0f, 1.0f) }
+            );
+            colorModule.color = new ParticleSystem.MinMaxGradient(gradient);
 
             // Store references for control during grab/release
             grabInteractable.selectEntered.AddListener((SelectEnterEventArgs args) =>
             {
                 rotatingScript.enabled = false; // Stop rotation
-                particleSystem.Pause();         // Pause particle emission
+
+                // Detach the particle system from the cube to keep it in place
+                particleSystem.transform.parent = null; // Unparent from cube
+                particleSystem.transform.position = spawnedCube.transform.position; // Keep in the same world position
+            
+                var emissionModule = particleSystem.emission;
+                emissionModule.enabled = false; // Stop emitting new particles
             });
 
             grabInteractable.selectExited.AddListener((SelectExitEventArgs args) =>
             {
-                //rotatingScript.enabled = true;  // Resume rotation
-                particleSystem.Play();          // Resume particle emission
+                //rotatingScript.enabled = true;  // Resume rotation (if needed)
+
+                var emissionModule = particleSystem.emission;
+                emissionModule.enabled = true;
 
                 rb.useGravity = true;
             });
